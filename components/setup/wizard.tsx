@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseClient } from "@/lib/supabase/client";
 import {
   Card,
   CardContent,
@@ -19,6 +18,7 @@ import { StepBusinessHours } from "./steps/step-business-hours";
 import { StepFallback } from "./steps/step-fallback";
 import { StepKnowledgeBase } from "./steps/step-knowledge-base";
 import { StepReview } from "./steps/step-review";
+import { createClient } from "@/utils/supabase/client";
 
 const STEPS = [
   {
@@ -61,7 +61,7 @@ export function SetupWizard({ user, initialConfig }: any) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const supabase = getSupabaseClient();
+  const supabase = createClient();
 
   const [config, setConfig] = useState<WizardConfig>({
     phone_number: initialConfig?.phone_number || "",

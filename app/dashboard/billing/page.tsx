@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { getSupabaseServer } from "@/lib/supabase/server";
 import { BillingTabs } from "@/components/billing/billing-tabs";
+import { createClient } from "@/utils/supabase/server";
 
 export default async function BillingPage() {
-  const supabase = await getSupabaseServer();
+  const supabase = await createClient();
 
   const {
     data: { user },

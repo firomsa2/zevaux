@@ -1,14 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { getSupabaseClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LogOut, Settings } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
 
 export function ResponsiveHeader({ user, profile }: any) {
   const router = useRouter();
-  const supabase = getSupabaseClient();
+  const supabase = createClient();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
