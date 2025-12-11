@@ -1493,6 +1493,7 @@ export default function SMSPage() {
               onRetry={handleRetrySMS}
               loading={loading}
               actionLoading={actionLoading}
+              filters={filters}
             />
           </CardContent>
         </Card>

@@ -154,27 +154,10 @@ export function SMSForm({
   editingSMS,
   loading,
 }: SMSFormProps) {
-  const [formData, setFormData] = useState({
-    mobile_number: "",
-    body: "",
-  });
-
-  // Reset form when editingSMS changes or dialog opens/closes
-  useEffect(() => {
-    if (open) {
-      if (editingSMS) {
-        setFormData({
-          mobile_number: editingSMS.mobile_number,
-          body: editingSMS.body,
-        });
-      } else {
-        setFormData({
-          mobile_number: "",
-          body: "",
-        });
-      }
-    }
-  }, [open, editingSMS]);
+  const [formData, setFormData] = useState(() => ({
+    mobile_number: editingSMS?.mobile_number || "",
+    body: editingSMS?.body || "",
+  }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

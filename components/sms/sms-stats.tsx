@@ -1,6 +1,6 @@
 "use client";
 
-import { SMSStats } from "@/types/sms";
+import type { SMSStats } from "@/types/sms";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Clock, CheckCircle, Send, AlertCircle } from "lucide-react";
 

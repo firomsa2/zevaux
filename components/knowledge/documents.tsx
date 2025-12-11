@@ -36,6 +36,7 @@ import {
   getKnowledgeDocuments,
   retryDocument,
   uploadDocument,
+  deleteDocument as deleteDocumentAction,
 } from "@/actions/knowledge";
 
 interface Document {
@@ -155,16 +156,16 @@ export default function DocumentsForm() {
     try {
       setLoading(true);
 
-      const result = await getKnowledgeDocuments();
+      const result = (await getKnowledgeDocuments()) as any;
 
-      if (!result.success) {
-        throw new Error(result.error);
+      // If the action returns an object with a success flag, handle errors
+      if (result && result.success === false) {
+        throw new Error(result.error || "Failed to fetch documents");
       }
 
-      // Filter for uploaded documents
-      const uploadDocs = result.data.filter(
-        (doc) => doc.source_type === "upload"
-      );
+      // Guard against different return shapes: { success, data } or an array directly
+      const data = result && result.data ? result.data : Array.isArray(result) ? result : [];
+      const uploadDocs = (data as any[]).filter((doc: any) => doc.source_type === "upload");
 
       // Transform to document format
       const docList = uploadDocs.map((doc) => ({
@@ -220,11 +221,11 @@ export default function DocumentsForm() {
         }
 
         // Add to local state
-        const newDoc = {
-          id: result.data.id,
+        const newDoc: Document = {
+          id: String(result.data?.id ?? ""),
           file_name: file.name,
           file_size: file.size,
-          file_type: file.type,
+          file_type: file.type || "application/octet-stream",
           language: language,
           status: "pending",
           created_at: new Date().toISOString(),
@@ -272,10 +273,10 @@ export default function DocumentsForm() {
     }
 
     try {
-      const result = await deleteDocument(documentId);
+      const result = await deleteDocumentAction(documentId);
 
-      if (!result.success) {
-        throw new Error(result.error);
+      if (!result || result.success === false) {
+        throw new Error(result?.error || "Failed to delete document");
       }
 
       // Remove from local state

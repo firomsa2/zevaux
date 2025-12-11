@@ -136,7 +136,7 @@ export default function WebsiteForm() {
       }
 
       // Filter for website documents
-      const websiteDocs = result.data.filter(
+      const websiteDocs = (result.data || []).filter(
         (doc) => doc.source_type === "url"
       );
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { SMSStatus, SMSMode, SMSFilters } from "@/types/sms";
+import type { SMSStatus, SMSMode, SMSFilters } from "@/types/sms";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -148,7 +148,7 @@ export function SMSFilters({
               <Calendar
                 initialFocus
                 mode="range"
-                defaultMonth={filters.dateRange?.from}
+                defaultMonth={filters.dateRange?.from || undefined}
                 selected={{
                   from: filters.dateRange?.from || undefined,
                   to: filters.dateRange?.to || undefined,

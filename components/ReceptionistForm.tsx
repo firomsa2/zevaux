@@ -141,7 +141,10 @@ export default function ReceptionistForm({
       setConfig((prev) => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof ReceptionistConfig],
+          ...((prev[parent as keyof ReceptionistConfig] as Record<
+            string,
+            any
+          >) || {}),
           [child]: value,
         },
       }));

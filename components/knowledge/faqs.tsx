@@ -183,7 +183,13 @@ export default function FAQsForm() {
       }
 
       // Filter for FAQ documents
-      const faqDocs = result.data.filter((doc) => doc.source_type === "manual");
+      const faqDocs = (
+        result && result.data
+          ? result.data
+          : Array.isArray(result)
+          ? result
+          : []
+      ).filter((doc) => doc.source_type === "manual");
 
       // Transform to FAQ format
       const faqList = faqDocs.flatMap((doc) =>
