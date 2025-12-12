@@ -42,11 +42,27 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     if (incrementPlay && voice) {
-      // Increment play count
-      await supabase
+      // Increment play count by reading current value and updating it
+      const { data: existing, error: selectError } = await supabase
         .from("voice_samples")
-        .update({ play_count: supabase.raw("play_count + 1") })
+        .select("play_count")
+        .eq("voice", voice)
+        .single();
+
+      if (selectError) {
+        throw selectError;
+      }
+
+      const newCount = (existing?.play_count ?? 0) + 1;
+
+      const { error: updateError } = await supabase
+        .from("voice_samples")
+        .update({ play_count: newCount })
         .eq("voice", voice);
+
+      if (updateError) {
+        throw updateError;
+      }
     }
 
     return NextResponse.json({ success: true });
