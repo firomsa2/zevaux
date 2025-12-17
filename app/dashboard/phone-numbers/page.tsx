@@ -2142,10 +2142,10 @@ const COUNTRIES = [
 
 interface AvailableNumber {
   phoneNumber: string;
-  countryCode: string;
-  capabilities: string[];
-  region?: string;
-  monthlyPrice?: number;
+  // countryCode: string;
+  // capabilities: string[];
+  // region?: string;
+  // monthlyPrice?: number;
 }
 
 export default function PhoneNumbersPage() {
@@ -2171,6 +2171,7 @@ export default function PhoneNumbersPage() {
     "voice"
   );
 
+  console.log("available ", availableNumbers);
   const loadPhoneEndpoints = async () => {
     setLoading(true);
     setError(null);
@@ -2251,10 +2252,11 @@ export default function PhoneNumbersPage() {
       }
 
       const result = await response.json();
+      console.log("🚀 ~ handleSearchNumbers ~ result:", result);
 
-      if (result.success && result.numbers && Array.isArray(result.numbers)) {
-        setAvailableNumbers(result.numbers);
-        if (result.numbers.length === 0) {
+      if (result && Array.isArray(result)) {
+        setAvailableNumbers(result);
+        if (result.length === 0) {
           setError(
             "No numbers found for your search criteria. Try a different area code or country."
           );
@@ -2263,6 +2265,13 @@ export default function PhoneNumbersPage() {
         throw new Error(result.error);
       } else {
         throw new Error("Invalid response from number search service");
+      }
+      if (Array.isArray(result)) {
+        const normalized = result.map((n) => ({
+          phoneNumber: n.phone_number,
+        }));
+
+        setAvailableNumbers(normalized);
       }
     } catch (err: any) {
       console.error("Error searching numbers:", err);
@@ -2289,15 +2298,15 @@ export default function PhoneNumbersPage() {
         businessId,
         name: phoneNumberName,
         phoneNumber: selectedNumber,
-        countryCode: selectedCountry.code,
-        channelType: channelType,
-        areaCode:
-          searchPrefix ||
-          selectedNumber.substring(
-            selectedCountry.dialCode.length,
-            selectedCountry.dialCode.length + 3
-          ),
-        timestamp: new Date().toISOString(),
+        // countryCode: selectedCountry.code,
+        // channelType: channelType,
+        // areaCode:
+        //   searchPrefix ||
+        //   selectedNumber.substring(
+        //     selectedCountry.dialCode.length,
+        //     selectedCountry.dialCode.length + 3
+        //   ),
+        // timestamp: new Date().toISOString(),
       };
 
       console.log("🛒 Purchasing number via n8n:", purchaseData);
@@ -2319,6 +2328,7 @@ export default function PhoneNumbersPage() {
       }
 
       const result = await response.json();
+      console.log("🚀 ~ handlePurchaseNumber ~ result:", result)
 
       if (result.success) {
         console.log("✅ Purchase successful, creating local record...");
@@ -2510,7 +2520,7 @@ export default function PhoneNumbersPage() {
                 )}
 
                 {/* Step 1: Channel Type */}
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   <h3 className="text-lg font-semibold">
                     1. Select Channel Type
                   </h3>
@@ -2532,13 +2542,11 @@ export default function PhoneNumbersPage() {
                     {channelType === "sms" && "Text messages (SMS)"}
                     {channelType === "whatsapp" && "WhatsApp messaging"}
                   </p>
-                </div>
+                </div> */}
 
                 {/* Step 2: Country Selection */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">
-                    2. Select Country & Search
-                  </h3>
+                  <h3 className="text-lg font-semibold">Select Country</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Country</Label>
@@ -2604,7 +2612,7 @@ export default function PhoneNumbersPage() {
                       </Popover>
                     </div>
 
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <Label htmlFor="areaCode">Area Code (Optional)</Label>
                       <div className="flex gap-2">
                         <div className="flex items-center px-3 border rounded bg-gray-50">
@@ -2625,7 +2633,7 @@ export default function PhoneNumbersPage() {
                       <p className="text-sm text-muted-foreground">
                         Leave empty for any available number
                       </p>
-                    </div>
+                    </div> */}
                   </div>
 
                   <Button
@@ -2671,7 +2679,7 @@ export default function PhoneNumbersPage() {
                                 <p className="font-mono font-bold">
                                   {number.phoneNumber}
                                 </p>
-                                <div className="flex flex-wrap gap-1 mt-1">
+                                {/* <div className="flex flex-wrap gap-1 mt-1">
                                   {number.capabilities?.map((cap) => (
                                     <Badge
                                       key={cap}
@@ -2681,8 +2689,8 @@ export default function PhoneNumbersPage() {
                                       {cap.toUpperCase()}
                                     </Badge>
                                   ))}
-                                </div>
-                                {number.region && (
+                                </div> */}
+                                {/* {number.region && (
                                   <p className="text-xs text-muted-foreground mt-1">
                                     {number.region}
                                   </p>
@@ -2691,7 +2699,7 @@ export default function PhoneNumbersPage() {
                                   <p className="text-xs font-semibold mt-1">
                                     ${number.monthlyPrice.toFixed(2)}/month
                                   </p>
-                                )}
+                                )} */}
                               </div>
                               {selectedNumber === number.phoneNumber && (
                                 <Check className="h-5 w-5 text-primary shrink-0" />
@@ -2733,20 +2741,22 @@ export default function PhoneNumbersPage() {
                             <p className="font-mono text-lg font-bold">
                               {selectedNumber}
                             </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="capitalize">
-                                {channelType}
-                              </Badge>
-                              <Badge variant="outline">
-                                {selectedCountry.flag} {selectedCountry.name}
-                              </Badge>
-                            </div>
+                            
                           </div>
                           <div className="text-right">
-                            <p className="text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 mt-1">
+                              {/* <Badge variant="outline" className="capitalize">
+                                {channelType}
+                              </Badge> */}
+                              <Badge variant="outline">
+                                {selectedCountry.flag}
+                                 {selectedCountry.name}
+                              </Badge>
+                            </div>
+                            {/* <p className="text-sm text-muted-foreground">
                               Monthly cost
                             </p>
-                            <p className="text-xl font-bold">$1.00</p>
+                            <p className="text-xl font-bold">$1.00</p> */}
                           </div>
                         </div>
                       </div>
