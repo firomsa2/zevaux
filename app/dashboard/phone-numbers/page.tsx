@@ -2069,7 +2069,7 @@
 import { useEffect, useState } from "react";
 import { getUserWithBusiness } from "@/utils/supabase/user";
 import { phoneNumberService } from "@/utils/supabase/phone-numbers";
-import { PhoneNumber } from "@/types/phone";
+import { PhoneNumber, Business } from "@/types/phone";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -2123,8 +2123,16 @@ import {
   Check,
   ChevronsUpDown,
   Search,
+  Star,
+  MoreVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Country data
 const COUNTRIES = [
@@ -2150,6 +2158,7 @@ interface AvailableNumber {
 
 export default function PhoneNumbersPage() {
   const [phoneEndpoints, setPhoneEndpoints] = useState<PhoneNumber[]>([]);
+  const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchingNumbers, setSearchingNumbers] = useState(false);
   const [purchasingNumber, setPurchasingNumber] = useState(false);
@@ -2171,7 +2180,6 @@ export default function PhoneNumbersPage() {
     "voice"
   );
 
-  console.log("available ", availableNumbers);
   const loadPhoneEndpoints = async () => {
     setLoading(true);
     setError(null);
@@ -2189,8 +2197,10 @@ export default function PhoneNumbersPage() {
 
       console.log("🔄 Loading fresh phone endpoints data...");
 
-      const { data, error: endpointsError } =
+      const { data, business: businessData, error: endpointsError } =
         await phoneNumberService.getPhoneNumbers(userBusinessId);
+      console.log('Phone numbers result:', data);
+      console.log('Business data:', businessData);
 
       if (endpointsError) {
         setError(`Failed to load phone endpoints: ${endpointsError.message}`);
@@ -2198,6 +2208,7 @@ export default function PhoneNumbersPage() {
       }
 
       setPhoneEndpoints(data || []);
+      setBusiness(businessData);
     } catch (err: any) {
       console.error("Unexpected error:", err);
       setError(`Unexpected error: ${err.message}`);
@@ -2235,9 +2246,8 @@ export default function PhoneNumbersPage() {
       console.log("🔍 Searching numbers via n8n:", searchData);
 
       // Call n8n webhook to search for available numbers
-
       const response = await fetch(
-        "https://ddconsult.app.n8n.cloud/webhook/active39cd31ba-70b1-4680-8d7f-b4b52502b44b", // Your n8n webhook URL for searching
+        "https://ddconsult.app.n8n.cloud/webhook/active39cd31ba-70b1-4680-8d7f-b4b52502b44b",
         {
           method: "POST",
           headers: {
@@ -2313,7 +2323,7 @@ export default function PhoneNumbersPage() {
 
       // Call n8n webhook to purchase the number
       const response = await fetch(
-        "https://ddconsult.app.n8n.cloud/webhook/buy39cd31ba-70b1-4680-8d7f-b4b52502b44b", // Your n8n webhook URL for purchasing
+        "https://ddconsult.app.n8n.cloud/webhook/buy39cd31ba-70b1-4680-8d7f-b4b52502b44b",
         {
           method: "POST",
           headers: {
@@ -2330,35 +2340,18 @@ export default function PhoneNumbersPage() {
       const result = await response.json();
       console.log("🚀 ~ handlePurchaseNumber ~ result:", result)
 
-      if (result.success) {
+      if (result) {
         console.log("✅ Purchase successful, creating local record...");
-
-        // Create local record in phone_endpoints
-        const { data: newEndpoint, error: createError } =
-          await phoneNumberService.createPhoneNumber(
-            {
-              name: phoneNumberName,
-              phone_number: selectedNumber,
-              channel_type: channelType,
-              // Add any other required fields
-            },
-            businessId
-          );
-
-        if (createError) {
-          console.warn(
-            "Created in n8n but local creation failed:",
-            createError
-          );
-          // Still show success since n8n handled it, but log the error
-        }
 
         setSuccess(
           `Successfully purchased ${selectedNumber}! The number is being configured...`
         );
         setShowBuyDialog(false);
         resetPurchaseForm();
-        loadPhoneEndpoints();
+        // Wait a bit for n8n to save to Supabase, then refresh
+        setTimeout(() => {
+          loadPhoneEndpoints();
+        }, 2000);
       } else {
         throw new Error(result.error || "Purchase failed");
       }
@@ -2381,16 +2374,19 @@ export default function PhoneNumbersPage() {
   };
 
   const handleDelete = async (phone: PhoneNumber) => {
-    if (
-      !businessId ||
-      !confirm("Are you sure you want to delete this phone endpoint?")
-    ) {
+    if (!businessId) return;
+
+    if (phone.is_primary) {
+      setError("Cannot delete the primary phone number. Set another number as primary first.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${phone.phone_number}?`)) {
       return;
     }
 
     // Optionally: Call n8n webhook to release the number from Twilio
     try {
-      // You might want to call an n8n webhook to release the number first
       const releaseResponse = await fetch(
         "https://ddconsult.app.n8n.cloud/webhook/release-number",
         {
@@ -2432,7 +2428,7 @@ export default function PhoneNumbersPage() {
   const handleEdit = async (phone: PhoneNumber) => {
     const newName = prompt(
       "Enter new name for the phone endpoint:",
-      phone.name
+      phone.name || phone.phone_number
     );
     if (newName && businessId) {
       const { error: updateError } = await phoneNumberService.updatePhoneNumber(
@@ -2453,6 +2449,12 @@ export default function PhoneNumbersPage() {
   const handleToggleStatus = async (phone: PhoneNumber) => {
     if (!businessId) return;
 
+    // Prevent deactivating primary number
+    if (phone.is_primary && phone.is_active) {
+      setError("Cannot deactivate the primary phone number. Set another number as primary first.");
+      return;
+    }
+
     const newStatus = !phone.is_active;
     const { error: updateError } = await phoneNumberService.updatePhoneNumber(
       phone.id,
@@ -2466,6 +2468,22 @@ export default function PhoneNumbersPage() {
       setSuccess(
         `Phone endpoint ${newStatus ? "activated" : "deactivated"} successfully`
       );
+      loadPhoneEndpoints();
+    }
+  };
+
+  const handleSetAsPrimary = async (phone: PhoneNumber) => {
+    if (!businessId) return;
+
+    const { error } = await phoneNumberService.setAsPrimary(
+      phone.phone_number,
+      businessId
+    );
+
+    if (error) {
+      setError(`Failed to set as primary: ${error.message}`);
+    } else {
+      setSuccess(`${phone.phone_number} is now the primary business line`);
       loadPhoneEndpoints();
     }
   };
@@ -2488,10 +2506,10 @@ export default function PhoneNumbersPage() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div className="flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Phone Endpoints
+              Phone Numbers
             </h1>
             <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-              Manage your phone endpoints and communication channels
+              Manage your business phone numbers and primary line
             </p>
           </div>
           <Dialog open={showBuyDialog} onOpenChange={setShowBuyDialog}>
@@ -2519,32 +2537,21 @@ export default function PhoneNumbersPage() {
                   </Alert>
                 )}
 
-                {/* Step 1: Channel Type */}
-                {/* <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">
-                    1. Select Channel Type
-                  </h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["voice", "sms", "whatsapp"] as const).map((type) => (
-                      <Button
-                        key={type}
-                        type="button"
-                        variant={channelType === type ? "default" : "outline"}
-                        onClick={() => setChannelType(type)}
-                        className="capitalize"
-                      >
-                        {type}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {channelType === "voice" && "Voice calls only"}
-                    {channelType === "sms" && "Text messages (SMS)"}
-                    {channelType === "whatsapp" && "WhatsApp messaging"}
-                  </p>
-                </div> */}
+                {/* Business Primary Number Info */}
+                {business?.phone_main && (
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      Your current primary business line is: <strong>{business.phone_main}</strong>
+                      <br />
+                      {phoneEndpoints.length === 0 ? 
+                        "Your first purchased number will automatically become the primary line." :
+                        "New numbers will not be set as primary automatically. You can change the primary number anytime."}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
-                {/* Step 2: Country Selection */}
+                {/* Step 1: Country Selection */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Select Country</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2835,15 +2842,38 @@ export default function PhoneNumbersPage() {
           </Alert>
         )}
 
+        {/* Business Primary Number Info Card */}
+        {business?.phone_main && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Star className="h-5 w-5 text-primary fill-primary" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Primary Business Line</p>
+                    <p className="text-lg font-semibold">{business.phone_main}</p>
+                    <p className="text-sm text-muted-foreground">
+                      This is the main number displayed to customers
+                    </p>
+                  </div>
+                </div>
+                <Badge className="flex items-center gap-1 bg-primary hover:bg-primary">
+                  <Star className="h-3 w-3" />
+                  Primary
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Phone Endpoints Table */}
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <CardTitle>Your Phone Endpoints</CardTitle>
+                <CardTitle>Your Phone Numbers</CardTitle>
                 <CardDescription>
-                  {phoneEndpoints.length} endpoint
-                  {phoneEndpoints.length !== 1 ? "s" : ""} in your business
+                  {phoneEndpoints.length} number{phoneEndpoints.length !== 1 ? "s" : ""} in your business
                 </CardDescription>
               </div>
               <Button
@@ -2862,11 +2892,11 @@ export default function PhoneNumbersPage() {
               <div className="text-center py-12">
                 <Phone className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">
-                  No phone endpoints yet
+                  No phone numbers yet
                 </h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                   Purchase your first phone number to start receiving calls and
-                  messages.
+                  messages. The first number will automatically become your primary business line.
                 </p>
                 <Button onClick={() => setShowBuyDialog(true)} size="lg">
                   Purchase Your First Number
@@ -2877,11 +2907,10 @@ export default function PhoneNumbersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Status</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Phone Number</TableHead>
                       <TableHead>Channel</TableHead>
-                      <TableHead>Country</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -2889,72 +2918,85 @@ export default function PhoneNumbersPage() {
                   <TableBody>
                     {phoneEndpoints.map((endpoint) => (
                       <TableRow key={endpoint.id}>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleToggleStatus(endpoint)}
+                                className="h-6 px-2"
+                                disabled={endpoint.is_primary && endpoint.is_active}
+                              >
+                                <Badge
+                                  variant={
+                                    endpoint.is_active ? "default" : "secondary"
+                                  }
+                                  className={
+                                    endpoint.is_active
+                                      ? "bg-green-100 text-green-800 hover:bg-green-100"
+                                      : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                                  }
+                                >
+                                  {endpoint.is_active ? "Active" : "Inactive"}
+                                </Badge>
+                              </Button>
+                              {endpoint.is_primary && (
+                                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                                  <Star className="h-3 w-3 mr-1" />
+                                  Primary
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell className="font-medium">
-                          {endpoint.name}
+                          <div className="flex items-center gap-2">
+                            {endpoint.name || endpoint.phone_number}
+                          </div>
                         </TableCell>
                         <TableCell className="font-mono">
                           {endpoint.phone_number}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">
-                            {endpoint.channel_type}
+                            {endpoint.channel_type || 'voice'}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {endpoint.phone_number.startsWith("+1")
-                              ? "🇺🇸 US"
-                              : endpoint.phone_number.startsWith("+44")
-                              ? "🇬🇧 UK"
-                              : endpoint.phone_number.startsWith("+61")
-                              ? "🇦🇺 AU"
-                              : "🌍 Global"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleToggleStatus(endpoint)}
-                              className="h-6 px-2"
-                            >
-                              <Badge
-                                variant={
-                                  endpoint.is_active ? "default" : "secondary"
-                                }
-                                className={
-                                  endpoint.is_active
-                                    ? "bg-green-100 text-green-800 hover:bg-green-100"
-                                    : "bg-gray-100 text-gray-800 hover:bg-gray-100"
-                                }
-                              >
-                                {endpoint.is_active ? "Active" : "Inactive"}
-                              </Badge>
-                            </Button>
-                          </div>
                         </TableCell>
                         <TableCell>
                           {new Date(endpoint.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(endpoint)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(endpoint)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {!endpoint.is_primary && (
+                                <DropdownMenuItem
+                                  onClick={() => handleSetAsPrimary(endpoint)}
+                                >
+                                  <Star className="h-4 w-4 mr-2" />
+                                  Set as Primary
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => handleEdit(endpoint)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit Name
+                              </DropdownMenuItem>
+                              {!endpoint.is_primary && (
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(endpoint)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
