@@ -1059,7 +1059,7 @@ export default async function Home() {
       </section>
 
       {/* Voice Samples Section */}
-      <VoiceSamplesSection />
+      {/*  <VoiceSamplesSection />*/}
 
       {/* Results & Social Proof - Enhanced with Gradient */}
       <section
@@ -1166,7 +1166,7 @@ export default async function Home() {
             </Card>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          {/* <div className="grid md:grid-cols-3 gap-8 mb-16">
             {[
               {
                 value: "98%",
@@ -1203,7 +1203,7 @@ export default async function Home() {
                 </div>
               </Card>
             ))}
-          </div>
+          </div> */}
 
           {/* Trusted Companies */}
           <div className="text-center">
@@ -1363,8 +1363,7 @@ export default async function Home() {
           <div className="pt-8 border-t border-primary/20">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-sm text-muted-foreground">
-                © {new Date().getFullYear()} Zevaux Technologies. All rights
-                reserved.
+                © 2025 JCER LLC. All rights reserved.
               </div>
 
               <div className="flex items-center gap-6 text-sm">
@@ -1384,14 +1383,15 @@ export default async function Home() {
                   href="#"
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  Cookie Policy
+                  Contact Us
                 </Link>
                 <ModeToggle />
               </div>
             </div>
           </div>
+
         </div>
       </footer>
-    </main>
+    </main >
   );
 }
