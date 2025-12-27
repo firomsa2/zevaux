@@ -2334,7 +2334,7 @@ export default function PhoneNumbersPage() {
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to purchase number: ${response.statusText}`);
+        throw new Error(`Failed to get number: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -2344,7 +2344,7 @@ export default function PhoneNumbersPage() {
         console.log("✅ Purchase successful, creating local record...");
 
         setSuccess(
-          `Successfully purchased ${selectedNumber}! The number is being configured...`
+          `Successfully Got ${selectedNumber}! The number is being configured...`
         );
         setShowBuyDialog(false);
         resetPurchaseForm();
@@ -2353,7 +2353,7 @@ export default function PhoneNumbersPage() {
           loadPhoneEndpoints();
         }, 2000);
       } else {
-        throw new Error(result.error || "Purchase failed");
+        throw new Error(result.error || "Get failed");
       }
     } catch (err: any) {
       console.error("Error purchasing number:", err);
@@ -2516,14 +2516,14 @@ export default function PhoneNumbersPage() {
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" />
-                Purchase New Number
+                Get New Number
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Purchase New Phone Number</DialogTitle>
+                <DialogTitle>Get New Phone Number</DialogTitle>
                 <DialogDescription>
-                  Search for available numbers and purchase through our n8n
+                  Search for available numbers and get through our n8n
                   integration
                 </DialogDescription>
               </DialogHeader>
@@ -2544,8 +2544,8 @@ export default function PhoneNumbersPage() {
                     <AlertDescription className="text-blue-800">
                       Your current primary business line is: <strong>{business.phone_main}</strong>
                       <br />
-                      {phoneEndpoints.length === 0 ? 
-                        "Your first purchased number will automatically become the primary line." :
+                      {phoneEndpoints.length === 0 ?
+                        "Your first  number will automatically become the primary line." :
                         "New numbers will not be set as primary automatically. You can change the primary number anytime."}
                     </AlertDescription>
                   </Alert>
@@ -2666,7 +2666,7 @@ export default function PhoneNumbersPage() {
                 {availableNumbers.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">
-                      3. Select a Number ({availableNumbers.length} available)
+                      Select a Number ({availableNumbers.length} available)
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
                       {availableNumbers.map((number, index) => (
@@ -2723,7 +2723,7 @@ export default function PhoneNumbersPage() {
                 {selectedNumber && (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">
-                      4. Configure & Purchase
+                      Configure & Get
                     </h3>
                     <div className="space-y-4">
                       <div className="space-y-2">
@@ -2748,7 +2748,7 @@ export default function PhoneNumbersPage() {
                             <p className="font-mono text-lg font-bold">
                               {selectedNumber}
                             </p>
-                            
+
                           </div>
                           <div className="text-right">
                             <div className="flex items-center gap-2 mt-1">
@@ -2757,7 +2757,7 @@ export default function PhoneNumbersPage() {
                               </Badge> */}
                               <Badge variant="outline">
                                 {selectedCountry.flag}
-                                 {selectedCountry.name}
+                                {selectedCountry.name}
                               </Badge>
                             </div>
                             {/* <p className="text-sm text-muted-foreground">
@@ -2797,10 +2797,10 @@ export default function PhoneNumbersPage() {
                   {purchasingNumber ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Processing Purchase...
+                      Processing...
                     </>
                   ) : (
-                    `Purchase ${selectedNumber}`
+                    `Get ${selectedNumber}`
                   )}
                 </Button>
               </DialogFooter>
@@ -2895,11 +2895,11 @@ export default function PhoneNumbersPage() {
                   No phone numbers yet
                 </h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Purchase your first phone number to start receiving calls and
+                  Gett your first phone number to start receiving calls and
                   messages. The first number will automatically become your primary business line.
                 </p>
                 <Button onClick={() => setShowBuyDialog(true)} size="lg">
-                  Purchase Your First Number
+                  Get Your First Number
                 </Button>
               </div>
             ) : (

@@ -726,7 +726,6 @@
 // export class PhoneNumberService {
 //   private supabase = createClient();
 
-
 //   async getPhoneNumbers(
 //     businessId: string
 //   ): Promise<{ data: PhoneNumber[]; error: any }> {
@@ -738,12 +737,11 @@
 //         .eq("business_id", businessId)
 //         .order("created_at", { ascending: false });
 
-        
 //         if (error) {
 //           console.log("error  fetching", error)
 //           return { data: [], error };
 //         }
-        
+
 //         // Transform phone_endpoints data to match PhoneNumber type
 //         const phoneNumbers = (endpointsData || []).map((endpoint) => ({
 //           id: endpoint.id,
@@ -964,14 +962,14 @@ export class PhoneNumberService {
   private supabase = createClient();
 
   // Get phone numbers with business info to compute is_primary
-  async getPhoneNumbers(businessId: string): Promise<{ 
-    data: PhoneNumber[]; 
+  async getPhoneNumbers(businessId: string): Promise<{
+    data: PhoneNumber[];
     business: Business | null;
-    error: any 
+    error: any;
   }> {
     try {
-      console.log('Fetching phone numbers for business:', businessId);
-      
+      console.log("Fetching phone numbers for business:", businessId);
+
       // First, get the business to know the primary phone
       const { data: businessData, error: businessError } = await this.supabase
         .from("businesses")
@@ -991,20 +989,22 @@ export class PhoneNumberService {
         .eq("business_id", businessId)
         .order("created_at", { ascending: false });
 
-         console.log('numberr', endpointsData)
+      console.log("numberr", endpointsData);
       if (endpointsError) {
         console.error("Error fetching phone endpoints:", endpointsError);
         return { data: [], business: businessData, error: endpointsError };
       }
 
       // Transform to PhoneNumber type and compute is_primary
-      const phoneNumbers: PhoneNumber[] = (endpointsData || []).map((endpoint: PhoneEndpoint) => ({
-        ...endpoint,
-        is_active: endpoint.status === 'active',
-        is_primary: businessData.phone_main === endpoint.phone_number
-      }));
+      const phoneNumbers: PhoneNumber[] = (endpointsData || []).map(
+        (endpoint: PhoneEndpoint) => ({
+          ...endpoint,
+          is_active: endpoint.status === "active",
+          is_primary: businessData.phone_main === endpoint.phone_number,
+        })
+      );
 
-      console.log('Transformed phone numbers:', phoneNumbers);
+      console.log("Transformed phone numbers:", phoneNumbers);
       return { data: phoneNumbers, business: businessData, error: null };
     } catch (error) {
       console.error("Unexpected error fetching phone numbers:", error);
@@ -1038,8 +1038,8 @@ export class PhoneNumberService {
 
       const phoneNumber: PhoneNumber = {
         ...endpointData,
-        is_active: endpointData.status === 'active',
-        is_primary: businessData?.phone_main === endpointData.phone_number
+        is_active: endpointData.status === "active",
+        is_primary: businessData?.phone_main === endpointData.phone_number,
       };
 
       return { data: phoneNumber, error: null };
@@ -1086,8 +1086,8 @@ export class PhoneNumberService {
       const endpointData: any = {
         business_id: businessId,
         phone_number: phoneData.phone_number,
-        channel_type: phoneData.channel_type || 'voice',
-        status: 'active',
+        channel_type: phoneData.channel_type || "voice",
+        status: "active",
         name: phoneData.name || phoneData.phone_number,
       };
 
@@ -1107,9 +1107,9 @@ export class PhoneNumberService {
       if (shouldSetAsMain) {
         const { error: updateError } = await this.supabase
           .from("businesses")
-          .update({ 
+          .update({
             phone_main: phoneData.phone_number,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq("id", businessId);
 
@@ -1123,13 +1123,13 @@ export class PhoneNumberService {
       const phoneNumber: PhoneNumber = {
         ...newEndpoint,
         is_active: true,
-        is_primary: shouldSetAsMain
+        is_primary: shouldSetAsMain,
       };
 
-      return { 
-        data: phoneNumber, 
-        error: null, 
-        isFirstNumber 
+      return {
+        data: phoneNumber,
+        error: null,
+        isFirstNumber,
       };
     } catch (error) {
       console.error("Unexpected error creating phone endpoint:", error);
@@ -1148,14 +1148,16 @@ export class PhoneNumberService {
 
       // Map updates to database schema
       if (updates.name !== undefined) updateData.name = updates.name;
-      if (updates.phone_number !== undefined) updateData.phone_number = updates.phone_number;
-      if (updates.channel_type !== undefined) updateData.channel_type = updates.channel_type;
-      
+      if (updates.phone_number !== undefined)
+        updateData.phone_number = updates.phone_number;
+      if (updates.channel_type !== undefined)
+        updateData.channel_type = updates.channel_type;
+
       // Handle status/is_active
       if (updates.status !== undefined) {
         updateData.status = updates.status;
       } else if (updates.is_active !== undefined) {
-        updateData.status = updates.is_active ? 'active' : 'inactive';
+        updateData.status = updates.is_active ? "active" : "inactive";
       }
 
       const { data, error } = await this.supabase
@@ -1180,8 +1182,8 @@ export class PhoneNumberService {
 
       const phoneNumber: PhoneNumber = {
         ...data,
-        is_active: data.status === 'active',
-        is_primary: businessData?.phone_main === data.phone_number
+        is_active: data.status === "active",
+        is_primary: businessData?.phone_main === data.phone_number,
       };
 
       return { data: phoneNumber, error: null };
@@ -1219,8 +1221,10 @@ export class PhoneNumberService {
       const isPrimary = businessData?.phone_main === phoneData.phone_number;
 
       if (isPrimary) {
-        return { 
-          error: new Error("Cannot delete the primary phone number. Set another number as primary first.") 
+        return {
+          error: new Error(
+            "Cannot delete the primary phone number. Set another number as primary first."
+          ),
         };
       }
 
@@ -1250,21 +1254,24 @@ export class PhoneNumberService {
         .select("id")
         .eq("business_id", businessId)
         .eq("phone_number", phoneNumber)
-        .eq("status", 'active')
-        .single();
+        .eq("status", "active")
+        .maybeSingle();
+      // .single();
 
       if (checkError || !phoneExists) {
-        return { 
-          error: new Error("Phone number not found or is not active for this business") 
+        return {
+          error: new Error(
+            "Phone number not found or is not active for this business"
+          ),
         };
       }
 
       // Update the business's primary phone
       const { error } = await this.supabase
         .from("businesses")
-        .update({ 
+        .update({
           phone_main: phoneNumber,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("id", businessId);
 
@@ -1297,11 +1304,13 @@ export class PhoneNumberService {
         return { data: [], error };
       }
 
-      const phoneNumbers: PhoneNumber[] = (data || []).map((endpoint: PhoneEndpoint) => ({
-        ...endpoint,
-        is_active: true,
-        is_primary: businessData?.phone_main === endpoint.phone_number
-      }));
+      const phoneNumbers: PhoneNumber[] = (data || []).map(
+        (endpoint: PhoneEndpoint) => ({
+          ...endpoint,
+          is_active: true,
+          is_primary: businessData?.phone_main === endpoint.phone_number,
+        })
+      );
 
       return { data: phoneNumbers, error: null };
     } catch (error) {
@@ -1315,7 +1324,7 @@ export class PhoneNumberService {
     try {
       const { data, error } = await this.supabase
         .from("phone_endpoints")
-        .select("id", { count: 'exact', head: true })
+        .select("id", { count: "exact", head: true })
         .eq("business_id", businessId);
 
       if (error) {
