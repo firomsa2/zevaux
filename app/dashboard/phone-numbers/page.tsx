@@ -2362,7 +2362,7 @@ export default function PhoneNumbersPage() {
           loadPhoneEndpoints();
         }, 2000);
       } else {
-        throw new Error(result.error || "Purchase failed");
+        throw new Error(result.error || "Get failed");
       }
     } catch (err: any) {
       console.error("Error purchasing number:", err);

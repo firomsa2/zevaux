@@ -485,10 +485,10 @@ export function PhoneNumberAssignment({
         receptionistId
       );
 
-      if (error) {
-        console.error("❌ Assignment error:", error);
-        throw error;
-      }
+      // if (error) {
+      //   console.error("❌ Assignment error:", error);
+      //   throw error;
+      // }
 
       console.log("✅ Assignment successful");
       onAssignmentChange(phoneNumberId);

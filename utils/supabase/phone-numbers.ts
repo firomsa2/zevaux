@@ -13,10 +13,15 @@ export class PhoneNumberService {
   // Get phone numbers with business info to compute is_primary
   async getPhoneNumbers(businessId: string): Promise<{
     data: PhoneNumber[];
+  async getPhoneNumbers(businessId: string): Promise<{
+    data: PhoneNumber[];
     business: Business | null;
+    error: any;
     error: any;
   }> {
     try {
+      console.log("Fetching phone numbers for business:", businessId);
+
       console.log("Fetching phone numbers for business:", businessId);
 
       // First, get the business to know the primary phone
@@ -39,6 +44,7 @@ export class PhoneNumberService {
         .order("created_at", { ascending: false });
 
       console.log("numberr", endpointsData);
+      console.log("numberr", endpointsData);
       if (endpointsError) {
         console.error("Error fetching phone endpoints:", endpointsError);
         return { data: [], business: businessData, error: endpointsError };
@@ -52,7 +58,15 @@ export class PhoneNumberService {
           is_primary: businessData.phone_main === endpoint.phone_number,
         })
       );
+      const phoneNumbers: PhoneNumber[] = (endpointsData || []).map(
+        (endpoint: PhoneEndpoint) => ({
+          ...endpoint,
+          is_active: endpoint.status === "active",
+          is_primary: businessData.phone_main === endpoint.phone_number,
+        })
+      );
 
+      console.log("Transformed phone numbers:", phoneNumbers);
       console.log("Transformed phone numbers:", phoneNumbers);
       return { data: phoneNumbers, business: businessData, error: null };
     } catch (error) {
@@ -87,6 +101,8 @@ export class PhoneNumberService {
 
       const phoneNumber: PhoneNumber = {
         ...endpointData,
+        is_active: endpointData.status === "active",
+        is_primary: businessData?.phone_main === endpointData.phone_number,
         is_active: endpointData.status === "active",
         is_primary: businessData?.phone_main === endpointData.phone_number,
       };
@@ -137,6 +153,8 @@ export class PhoneNumberService {
         phone_number: phoneData.phone_number,
         channel_type: phoneData.channel_type || "voice",
         status: "active",
+        channel_type: phoneData.channel_type || "voice",
+        status: "active",
         name: phoneData.name || phoneData.phone_number,
       };
 
@@ -157,7 +175,9 @@ export class PhoneNumberService {
         const { error: updateError } = await this.supabase
           .from("businesses")
           .update({
+          .update({
             phone_main: phoneData.phone_number,
+            updated_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq("id", businessId);
@@ -173,8 +193,13 @@ export class PhoneNumberService {
         ...newEndpoint,
         is_active: true,
         is_primary: shouldSetAsMain,
+        is_primary: shouldSetAsMain,
       };
 
+      return {
+        data: phoneNumber,
+        error: null,
+        isFirstNumber,
       return {
         data: phoneNumber,
         error: null,
@@ -202,10 +227,16 @@ export class PhoneNumberService {
       if (updates.channel_type !== undefined)
         updateData.channel_type = updates.channel_type;
 
+      if (updates.phone_number !== undefined)
+        updateData.phone_number = updates.phone_number;
+      if (updates.channel_type !== undefined)
+        updateData.channel_type = updates.channel_type;
+
       // Handle status/is_active
       if (updates.status !== undefined) {
         updateData.status = updates.status;
       } else if (updates.is_active !== undefined) {
+        updateData.status = updates.is_active ? "active" : "inactive";
         updateData.status = updates.is_active ? "active" : "inactive";
       }
 
@@ -231,6 +262,8 @@ export class PhoneNumberService {
 
       const phoneNumber: PhoneNumber = {
         ...data,
+        is_active: data.status === "active",
+        is_primary: businessData?.phone_main === data.phone_number,
         is_active: data.status === "active",
         is_primary: businessData?.phone_main === data.phone_number,
       };
@@ -274,6 +307,10 @@ export class PhoneNumberService {
           error: new Error(
             "Cannot delete the primary phone number. Set another number as primary first."
           ),
+        return {
+          error: new Error(
+            "Cannot delete the primary phone number. Set another number as primary first."
+          ),
         };
       }
 
@@ -311,6 +348,10 @@ export class PhoneNumberService {
           error: new Error(
             "Phone number not found or is not active for this business"
           ),
+        return {
+          error: new Error(
+            "Phone number not found or is not active for this business"
+          ),
         };
       }
 
@@ -318,7 +359,9 @@ export class PhoneNumberService {
       const { error } = await this.supabase
         .from("businesses")
         .update({
+        .update({
           phone_main: phoneNumber,
+          updated_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", businessId);
@@ -359,6 +402,13 @@ export class PhoneNumberService {
           is_primary: businessData?.phone_main === endpoint.phone_number,
         })
       );
+      const phoneNumbers: PhoneNumber[] = (data || []).map(
+        (endpoint: PhoneEndpoint) => ({
+          ...endpoint,
+          is_active: true,
+          is_primary: businessData?.phone_main === endpoint.phone_number,
+        })
+      );
 
       return { data: phoneNumbers, error: null };
     } catch (error) {
@@ -372,6 +422,7 @@ export class PhoneNumberService {
     try {
       const { data, error } = await this.supabase
         .from("phone_endpoints")
+        .select("id", { count: "exact", head: true })
         .select("id", { count: "exact", head: true })
         .eq("business_id", businessId);
 
@@ -446,3 +497,4 @@ export class PhoneNumberService {
 }
 
 export const phoneNumberService = new PhoneNumberService();
+

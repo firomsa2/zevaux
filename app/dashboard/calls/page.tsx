@@ -10,16 +10,16 @@ import { CallsTable } from "@/components/calls-table";
 import { CallWithTranscript } from "@/types/call";
 
 export default function CallsPage() {
-  const [calls, setCalls] = useState<CallWithTranscript[]>([]);
-  const [filter, setFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
+  // const [calls, setCalls] = useState<CallWithTranscript[]>([]);
+  // const [filter, setFilter] = useState("all");
+  // const [loading, setLoading] = useState(true);
+  // const [orgId, setOrgId] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
+  // const supabase = createClient();
 
-  const fetchCallsWithTranscripts = async () => {
-    setLoading(true);
-    setError(null);
+  // const fetchCallsWithTranscripts = async () => {
+  //   setLoading(true);
+  //   setError(null);
 
     try {
       // Get user with organization
@@ -34,120 +34,120 @@ export default function CallsPage() {
         return;
       }
 
-      setOrgId(orgId);
-      console.log("🚀 ~ Fetching calls for org:", orgId);
+  //     setOrgId(orgId);
+  //     console.log("🚀 ~ Fetching calls for org:", orgId);
 
-      // First, fetch calls with organization filter
-      let callsQuery = supabase
-        .from("calls")
-        .select("*")
-        .eq("org_id", orgId)
-        .order("created_at", { ascending: false })
-        .limit(50);
+  //     // First, fetch calls with organization filter
+  //     let callsQuery = supabase
+  //       .from("calls")
+  //       .select("*")
+  //       .eq("org_id", orgId)
+  //       .order("created_at", { ascending: false })
+  //       .limit(50);
 
-      // Apply filters
-      if (filter === "active") callsQuery = callsQuery.is("ended_at", null);
-      if (filter === "completed")
-        callsQuery = callsQuery.not("ended_at", "is", null);
+  //     // Apply filters
+  //     if (filter === "active") callsQuery = callsQuery.is("ended_at", null);
+  //     if (filter === "completed")
+  //       callsQuery = callsQuery.not("ended_at", "is", null);
 
-      const { data: callsData, error: callsError } = await callsQuery;
+  //     const { data: callsData, error: callsError } = await callsQuery;
 
-      if (callsError) {
-        console.error("Error fetching calls:", callsError);
-        setError(`Failed to load calls: ${callsError.message}`);
-        setLoading(false);
-        return;
-      }
+  //     if (callsError) {
+  //       console.error("Error fetching calls:", callsError);
+  //       setError(`Failed to load calls: ${callsError.message}`);
+  //       setLoading(false);
+  //       return;
+  //     }
 
-      console.log("🚀 ~ Calls data:", callsData);
+  //     console.log("🚀 ~ Calls data:", callsData);
 
-      if (!callsData || callsData.length === 0) {
-        console.log("🚀 ~ No calls found");
-        setCalls([]);
-        setLoading(false);
-        return;
-      }
+  //     if (!callsData || callsData.length === 0) {
+  //       console.log("🚀 ~ No calls found");
+  //       setCalls([]);
+  //       setLoading(false);
+  //       return;
+  //     }
 
-      // Get all call IDs to fetch transcripts
-      const callIds = callsData.map((call) => call.id);
-      console.log("🚀 ~ Call IDs to fetch transcripts for:", callIds);
+  //     // Get all call IDs to fetch transcripts
+  //     const callIds = callsData.map((call) => call.id);
+  //     console.log("🚀 ~ Call IDs to fetch transcripts for:", callIds);
 
-      // Fetch transcripts for these calls
-      const { data: transcriptsData, error: transcriptsError } = await supabase
-        .from("transcripts")
-        .select("*")
-        .in("call_id", callIds);
+  //     // Fetch transcripts for these calls
+  //     const { data: transcriptsData, error: transcriptsError } = await supabase
+  //       .from("transcripts")
+  //       .select("*")
+  //       .in("call_id", callIds);
 
-      if (transcriptsError) {
-        console.error("Error fetching transcripts:", transcriptsError);
-      }
+  //     if (transcriptsError) {
+  //       console.error("Error fetching transcripts:", transcriptsError);
+  //     }
 
-      console.log("🚀 ~ Transcripts data:", transcriptsData);
+  //     console.log("🚀 ~ Transcripts data:", transcriptsData);
 
-      // Create a map of call_id to transcript for easy lookup
-      const transcriptMap = new Map();
-      transcriptsData?.forEach((transcript) => {
-        transcriptMap.set(transcript.call_id, transcript);
-      });
+  //     // Create a map of call_id to transcript for easy lookup
+  //     const transcriptMap = new Map();
+  //     transcriptsData?.forEach((transcript) => {
+  //       transcriptMap.set(transcript.call_id, transcript);
+  //     });
 
-      console.log("🚀 ~ Transcript map:", transcriptMap);
+  //     console.log("🚀 ~ Transcript map:", transcriptMap);
 
-      // Combine calls with their transcripts
-      const callsWithTranscripts: CallWithTranscript[] = callsData.map(
-        (call) => {
-          const transcript = transcriptMap.get(call.id);
-          console.log(`🚀 ~ Call ${call.id} has transcript:`, !!transcript);
-          return {
-            ...call,
-            transcript: transcript || null,
-          };
-        }
-      );
+  //     // Combine calls with their transcripts
+  //     const callsWithTranscripts: CallWithTranscript[] = callsData.map(
+  //       (call) => {
+  //         const transcript = transcriptMap.get(call.id);
+  //         console.log(`🚀 ~ Call ${call.id} has transcript:`, !!transcript);
+  //         return {
+  //           ...call,
+  //           transcript: transcript || null,
+  //         };
+  //       }
+  //     );
 
-      console.log("🚀 ~ Final calls with transcripts:", callsWithTranscripts);
-      setCalls(callsWithTranscripts);
-    } catch (err: any) {
-      console.error("Unexpected error:", err);
-      setError(`Unexpected error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     console.log("🚀 ~ Final calls with transcripts:", callsWithTranscripts);
+  //     setCalls(callsWithTranscripts);
+  //   } catch (err: any) {
+  //     console.error("Unexpected error:", err);
+  //     setError(`Unexpected error: ${err.message}`);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchCallsWithTranscripts();
-  }, [filter]);
+  // useEffect(() => {
+  //   fetchCallsWithTranscripts();
+  // }, [filter]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading calls...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <div className="text-center">
+  //         <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+  //         <p>Loading calls...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
-  if (error) {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-          <Button
-            onClick={fetchCallsWithTranscripts}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <div className="container mx-auto py-8 px-4">
+  //       <div className="max-w-4xl mx-auto">
+  //         <Alert variant="destructive" className="mb-6">
+  //           <AlertCircle className="h-4 w-4" />
+  //           <AlertDescription>{error}</AlertDescription>
+  //         </Alert>
+  //         <Button
+  //           onClick={fetchCallsWithTranscripts}
+  //           className="flex items-center gap-2"
+  //         >
+  //           <RefreshCw className="h-4 w-4" />
+  //           Try Again
+  //         </Button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="container mx-auto px-4">
@@ -162,7 +162,7 @@ export default function CallsPage() {
           </div>
 
           {/* Filter Controls */}
-          <div className="flex gap-4 mb-6">
+          {/* <div className="flex gap-4 mb-6">
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
@@ -172,15 +172,15 @@ export default function CallsPage() {
               <option value="active">Live Calls</option>
               <option value="completed">Completed Calls</option>
             </select>
-          </div>
+          </div> */}
         </div>
 
         {/* Calls Table */}
-        <CallsTable
+        {/* <CallsTable
           calls={calls}
           loading={loading}
           onRefresh={fetchCallsWithTranscripts}
-        />
+        /> */}
       </div>
     </div>
   );
