@@ -2125,6 +2125,8 @@ import {
   Search,
   Star,
   MoreVertical,
+  ShieldAlert,
+  ShieldOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -2133,6 +2135,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Country data
 const COUNTRIES = [
@@ -2150,10 +2162,6 @@ const COUNTRIES = [
 
 interface AvailableNumber {
   phoneNumber: string;
-  // countryCode: string;
-  // capabilities: string[];
-  // region?: string;
-  // monthlyPrice?: number;
 }
 
 export default function PhoneNumbersPage() {
@@ -2180,6 +2188,14 @@ export default function PhoneNumbersPage() {
     "voice"
   );
 
+  // Escalation number states
+  const [showEscalationDialog, setShowEscalationDialog] = useState(false);
+  const [escalationNumber, setEscalationNumber] = useState("");
+  const [savingEscalation, setSavingEscalation] = useState(false);
+  const [removingEscalation, setRemovingEscalation] = useState(false);
+  const [showDeleteEscalationAlert, setShowDeleteEscalationAlert] =
+    useState(false);
+
   const loadPhoneEndpoints = async () => {
     setLoading(true);
     setError(null);
@@ -2197,10 +2213,11 @@ export default function PhoneNumbersPage() {
 
       console.log("🔄 Loading fresh phone endpoints data...");
 
-      const { data, business: businessData, error: endpointsError } =
-        await phoneNumberService.getPhoneNumbers(userBusinessId);
-      console.log('Phone numbers result:', data);
-      console.log('Business data:', businessData);
+      const {
+        data,
+        business: businessData,
+        error: endpointsError,
+      } = await phoneNumberService.getPhoneNumbers(userBusinessId);
 
       if (endpointsError) {
         setError(`Failed to load phone endpoints: ${endpointsError.message}`);
@@ -2209,6 +2226,11 @@ export default function PhoneNumbersPage() {
 
       setPhoneEndpoints(data || []);
       setBusiness(businessData);
+
+      // Set escalation number from business data
+      if (businessData?.escalation_number) {
+        setEscalationNumber(businessData.escalation_number);
+      }
     } catch (err: any) {
       console.error("Unexpected error:", err);
       setError(`Unexpected error: ${err.message}`);
@@ -2237,10 +2259,6 @@ export default function PhoneNumbersPage() {
       const searchData = {
         businessId,
         countryCode: selectedCountry.code,
-        // dialCode: selectedCountry.dialCode,
-        // areaCode: searchPrefix,
-        // channelType: channelType,
-        // timestamp: new Date().toISOString(),
       };
 
       console.log("🔍 Searching numbers via n8n:", searchData);
@@ -2308,15 +2326,6 @@ export default function PhoneNumbersPage() {
         businessId,
         name: phoneNumberName,
         phoneNumber: selectedNumber,
-        // countryCode: selectedCountry.code,
-        // channelType: channelType,
-        // areaCode:
-        //   searchPrefix ||
-        //   selectedNumber.substring(
-        //     selectedCountry.dialCode.length,
-        //     selectedCountry.dialCode.length + 3
-        //   ),
-        // timestamp: new Date().toISOString(),
       };
 
       console.log("🛒 Purchasing number via n8n:", purchaseData);
@@ -2334,17 +2343,17 @@ export default function PhoneNumbersPage() {
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to purchase number: ${response.statusText}`);
+        throw new Error(`Failed to got number: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log("🚀 ~ handlePurchaseNumber ~ result:", result)
+      console.log("🚀 ~ handlePurchaseNumber ~ result:", result);
 
       if (result) {
-        console.log("✅ Purchase successful, creating local record...");
+        console.log("✅ Got number successfully, creating local record...");
 
         setSuccess(
-          `Successfully purchased ${selectedNumber}! The number is being configured...`
+          `Successfully got ${selectedNumber}! The number is being configured...`
         );
         setShowBuyDialog(false);
         resetPurchaseForm();
@@ -2373,11 +2382,100 @@ export default function PhoneNumbersPage() {
     setChannelType("voice");
   };
 
+  // Handle saving escalation number
+  const handleSaveEscalationNumber = async () => {
+    if (!businessId) {
+      setError("Business not found");
+      return;
+    }
+
+    // Basic phone number validation
+    const phoneRegex = /^\+[1-9]\d{1,14}$/;
+    if (!phoneRegex.test(escalationNumber)) {
+      setError(
+        "Please enter a valid phone number with country code (e.g., +1234567890)"
+      );
+      return;
+    }
+
+    setSavingEscalation(true);
+    setError(null);
+
+    try {
+      const { error } = await phoneNumberService.updateEscalationNumber(
+        businessId,
+        escalationNumber
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      setSuccess("Escalation number saved successfully");
+      setShowEscalationDialog(false);
+
+      // Refresh business data
+      const { data: businessData } = await phoneNumberService.getBusiness(
+        businessId
+      );
+      if (businessData) {
+        setBusiness(businessData);
+      }
+    } catch (err: any) {
+      console.error("Error saving escalation number:", err);
+      setError(`Failed to save escalation number: ${err.message}`);
+    } finally {
+      setSavingEscalation(false);
+    }
+  };
+
+  // Handle removing escalation number
+  const handleRemoveEscalationNumber = () => {
+    setShowDeleteEscalationAlert(true);
+  };
+
+  const confirmRemoveEscalationNumber = async () => {
+    if (!businessId) return;
+
+    setRemovingEscalation(true);
+    setError(null);
+
+    try {
+      const { error } = await phoneNumberService.removeEscalationNumber(
+        businessId
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      setSuccess("Escalation number removed successfully");
+      setEscalationNumber("");
+      setShowEscalationDialog(false);
+      setShowDeleteEscalationAlert(false);
+
+      // Refresh business data
+      const { data: businessData } = await phoneNumberService.getBusiness(
+        businessId
+      );
+      if (businessData) {
+        setBusiness(businessData);
+      }
+    } catch (err: any) {
+      console.error("Error removing escalation number:", err);
+      setError(`Failed to remove escalation number: ${err.message}`);
+    } finally {
+      setRemovingEscalation(false);
+    }
+  };
+
   const handleDelete = async (phone: PhoneNumber) => {
     if (!businessId) return;
 
     if (phone.is_primary) {
-      setError("Cannot delete the primary phone number. Set another number as primary first.");
+      setError(
+        "Cannot delete the primary phone number. Set another number as primary first."
+      );
       return;
     }
 
@@ -2451,7 +2549,9 @@ export default function PhoneNumbersPage() {
 
     // Prevent deactivating primary number
     if (phone.is_primary && phone.is_active) {
-      setError("Cannot deactivate the primary phone number. Set another number as primary first.");
+      setError(
+        "Cannot deactivate the primary phone number. Set another number as primary first."
+      );
       return;
     }
 
@@ -2512,300 +2612,406 @@ export default function PhoneNumbersPage() {
               Manage your business phone numbers and primary line
             </p>
           </div>
-          <Dialog open={showBuyDialog} onOpenChange={setShowBuyDialog}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2 w-full sm:w-auto">
-                <Plus className="h-4 w-4" />
-                Purchase New Number
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Purchase New Phone Number</DialogTitle>
-                <DialogDescription>
-                  Search for available numbers and purchase through our n8n
-                  integration
-                </DialogDescription>
-              </DialogHeader>
 
-              <div className="space-y-6 py-4">
-                {/* Alerts */}
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Add Escalation Number Button */}
+            <Dialog
+              open={showEscalationDialog}
+              onOpenChange={setShowEscalationDialog}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4" />
+                  {business?.escalation_number
+                    ? "Edit Escalation Number"
+                    : "Add Escalation Number"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {business?.escalation_number
+                      ? "Edit Escalation Number"
+                      : "Add Escalation Number"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    Enter a phone number that will receive escalated calls when
+                    needed
+                  </DialogDescription>
+                </DialogHeader>
 
-                {/* Business Primary Number Info */}
-                {business?.phone_main && (
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-800">
-                      Your current primary business line is: <strong>{business.phone_main}</strong>
-                      <br />
-                      {phoneEndpoints.length === 0 ? 
-                        "Your first purchased number will automatically become the primary line." :
-                        "New numbers will not be set as primary automatically. You can change the primary number anytime."}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                <div className="space-y-4 py-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
 
-                {/* Step 1: Country Selection */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Select Country</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Country</Label>
-                      <Popover
-                        open={openCountryDropdown}
-                        onOpenChange={setOpenCountryDropdown}
-                      >
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={openCountryDropdown}
-                            className="w-full justify-between"
-                          >
-                            {selectedCountry ? (
-                              <div className="flex items-center gap-2">
-                                <span>{selectedCountry.flag}</span>
-                                <span>{selectedCountry.name}</span>
-                                <span className="text-muted-foreground">
-                                  ({selectedCountry.dialCode})
-                                </span>
-                              </div>
-                            ) : (
-                              "Select country..."
-                            )}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
-                          <Command>
-                            <CommandInput placeholder="Search country..." />
-                            <CommandList>
-                              <CommandEmpty>No country found.</CommandEmpty>
-                              <CommandGroup>
-                                {COUNTRIES.map((country) => (
-                                  <CommandItem
-                                    key={country.code}
-                                    value={country.name}
-                                    onSelect={() => {
-                                      setSelectedCountry(country);
-                                      setOpenCountryDropdown(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        selectedCountry.code === country.code
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      )}
-                                    />
-                                    <span className="mr-2">{country.flag}</span>
-                                    {country.name}
-                                    <span className="ml-auto text-muted-foreground">
-                                      {country.dialCode}
-                                    </span>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    {/* <div className="space-y-2">
-                      <Label htmlFor="areaCode">Area Code (Optional)</Label>
-                      <div className="flex gap-2">
-                        <div className="flex items-center px-3 border rounded bg-gray-50">
-                          {selectedCountry.dialCode}
-                        </div>
-                        <Input
-                          id="areaCode"
-                          placeholder="e.g., 212"
-                          value={searchPrefix}
-                          onChange={(e) =>
-                            setSearchPrefix(
-                              e.target.value.replace(/\D/g, "").slice(0, 3)
-                            )
-                          }
-                          className="flex-1"
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Leave empty for any available number
-                      </p>
-                    </div> */}
+                  <div className="space-y-2">
+                    <Label htmlFor="escalationNumber">
+                      Escalation Phone Number *
+                    </Label>
+                    <Input
+                      id="escalationNumber"
+                      placeholder="+1234567890"
+                      value={escalationNumber}
+                      onChange={(e) => setEscalationNumber(e.target.value)}
+                      required
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Enter a full phone number with country code (e.g., +1 234
+                      567 8900)
+                    </p>
                   </div>
 
-                  <Button
-                    onClick={handleSearchNumbers}
-                    disabled={searchingNumbers}
-                    className="w-full"
-                  >
-                    {searchingNumbers ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Searching Available Numbers...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="h-4 w-4 mr-2" />
-                        Search Available Numbers
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Step 3: Available Numbers */}
-                {availableNumbers.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">
-                      3. Select a Number ({availableNumbers.length} available)
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
-                      {availableNumbers.map((number, index) => (
-                        <Card
-                          key={index}
-                          className={cn(
-                            "cursor-pointer transition-all hover:border-primary",
-                            selectedNumber === number.phoneNumber
-                              ? "border-primary border-2 bg-primary/5"
-                              : ""
-                          )}
-                          onClick={() => setSelectedNumber(number.phoneNumber)}
-                        >
-                          <CardContent className="p-3">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="font-mono font-bold">
-                                  {number.phoneNumber}
-                                </p>
-                                {/* <div className="flex flex-wrap gap-1 mt-1">
-                                  {number.capabilities?.map((cap) => (
-                                    <Badge
-                                      key={cap}
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      {cap.toUpperCase()}
-                                    </Badge>
-                                  ))}
-                                </div> */}
-                                {/* {number.region && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {number.region}
-                                  </p>
-                                )}
-                                {number.monthlyPrice && (
-                                  <p className="text-xs font-semibold mt-1">
-                                    ${number.monthlyPrice.toFixed(2)}/month
-                                  </p>
-                                )} */}
-                              </div>
-                              {selectedNumber === number.phoneNumber && (
-                                <Check className="h-5 w-5 text-primary shrink-0" />
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 4: Configure & Purchase */}
-                {selectedNumber && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">
-                      4. Configure & Purchase
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="phoneName">Friendly Name *</Label>
-                        <Input
-                          id="phoneName"
-                          placeholder="e.g., Main Business Line, Support Hotline"
-                          value={phoneNumberName}
-                          onChange={(e) => setPhoneNumberName(e.target.value)}
-                          required
-                        />
-                        <p className="text-sm text-muted-foreground">
-                          This name will help you identify this number in your
-                          dashboard
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <ShieldAlert className="h-5 w-5 text-yellow-600 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-yellow-800">
+                          What is an escalation number?
+                        </p>
+                        <p className="text-sm text-yellow-700 mt-1">
+                          This number will receive calls when a customer needs
+                          to speak with a human representative. It's used for
+                          high-priority issues or when the AI assistant cannot
+                          handle the request.
                         </p>
                       </div>
+                    </div>
+                  </div>
+                </div>
 
-                      <div className="p-4 border rounded-lg bg-muted/50">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                          <div>
-                            <p className="font-semibold">Selected Number</p>
-                            <p className="font-mono text-lg font-bold">
-                              {selectedNumber}
-                            </p>
-                            
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-2 mt-1">
-                              {/* <Badge variant="outline" className="capitalize">
-                                {channelType}
-                              </Badge> */}
-                              <Badge variant="outline">
-                                {selectedCountry.flag}
-                                 {selectedCountry.name}
-                              </Badge>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                  {business?.escalation_number && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={handleRemoveEscalationNumber}
+                      disabled={removingEscalation || savingEscalation}
+                      className="w-full sm:w-auto"
+                    >
+                      {removingEscalation ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Removing...
+                        </>
+                      ) : (
+                        <>
+                          <ShieldOff className="h-4 w-4 mr-2" />
+                          Remove Escalation Number
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={handleSaveEscalationNumber}
+                    disabled={
+                      !escalationNumber.trim() ||
+                      savingEscalation ||
+                      removingEscalation
+                    }
+                    className="w-full sm:w-auto"
+                  >
+                    {savingEscalation ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Escalation Number"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <AlertDialog
+              open={showDeleteEscalationAlert}
+              onOpenChange={setShowDeleteEscalationAlert}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Remove Escalation Number?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to remove the escalation number? This
+                    action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={removingEscalation}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      confirmRemoveEscalationNumber();
+                    }}
+                    className="bg-red-600 hover:bg-red-700"
+                    disabled={removingEscalation}
+                  >
+                    {removingEscalation ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Removing...
+                      </>
+                    ) : (
+                      "Remove"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Purchase New Number Button */}
+            <Dialog open={showBuyDialog} onOpenChange={setShowBuyDialog}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Get New Number
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Get New Phone Number</DialogTitle>
+                  <DialogDescription>
+                    Search for available numbers and get through our n8n
+                    integration
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6 py-4">
+                  {/* Alerts */}
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Business Primary Number Info */}
+                  {business?.phone_main && (
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <AlertCircle className="h-4 w-4 text-blue-600" />
+                      <AlertDescription className="text-blue-800">
+                        Your current primary business line is:{" "}
+                        <strong>{business.phone_main}</strong>
+                        <br />
+                        {phoneEndpoints.length === 0
+                          ? "Your first purchased number will automatically become the primary line."
+                          : "New numbers will not be set as primary automatically. You can change the primary number anytime."}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Step 1: Country Selection */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Select Country</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Country</Label>
+                        <Popover
+                          open={openCountryDropdown}
+                          onOpenChange={setOpenCountryDropdown}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openCountryDropdown}
+                              className="w-full justify-between"
+                            >
+                              {selectedCountry ? (
+                                <div className="flex items-center gap-2">
+                                  <span>{selectedCountry.flag}</span>
+                                  <span>{selectedCountry.name}</span>
+                                  <span className="text-muted-foreground">
+                                    ({selectedCountry.dialCode})
+                                  </span>
+                                </div>
+                              ) : (
+                                "Select country..."
+                              )}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0">
+                            <Command>
+                              <CommandInput placeholder="Search country..." />
+                              <CommandList>
+                                <CommandEmpty>No country found.</CommandEmpty>
+                                <CommandGroup>
+                                  {COUNTRIES.map((country) => (
+                                    <CommandItem
+                                      key={country.code}
+                                      value={country.name}
+                                      onSelect={() => {
+                                        setSelectedCountry(country);
+                                        setOpenCountryDropdown(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          selectedCountry.code === country.code
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      <span className="mr-2">
+                                        {country.flag}
+                                      </span>
+                                      {country.name}
+                                      <span className="ml-auto text-muted-foreground">
+                                        {country.dialCode}
+                                      </span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleSearchNumbers}
+                      disabled={searchingNumbers}
+                      className="w-full"
+                    >
+                      {searchingNumbers ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Searching Available Numbers...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="h-4 w-4 mr-2" />
+                          Search Available Numbers
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Step 3: Available Numbers */}
+                  {availableNumbers.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">
+                        Select a Number ({availableNumbers.length} available)
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
+                        {availableNumbers.map((number, index) => (
+                          <Card
+                            key={index}
+                            className={cn(
+                              "cursor-pointer transition-all hover:border-primary",
+                              selectedNumber === number.phoneNumber
+                                ? "border-primary border-2 bg-primary/5"
+                                : ""
+                            )}
+                            onClick={() =>
+                              setSelectedNumber(number.phoneNumber)
+                            }
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="font-mono font-bold">
+                                    {number.phoneNumber}
+                                  </p>
+                                </div>
+                                {selectedNumber === number.phoneNumber && (
+                                  <Check className="h-5 w-5 text-primary shrink-0" />
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 4: Configure & Purchase */}
+                  {selectedNumber && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Configure & Get</h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="phoneName">Friendly Name *</Label>
+                          <Input
+                            id="phoneName"
+                            placeholder="e.g., Main Business Line, Support Hotline"
+                            value={phoneNumberName}
+                            onChange={(e) => setPhoneNumberName(e.target.value)}
+                            required
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            This name will help you identify this number in your
+                            dashboard
+                          </p>
+                        </div>
+
+                        <div className="p-4 border rounded-lg bg-muted/50">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div>
+                              <p className="font-semibold">Selected Number</p>
+                              <p className="font-mono text-lg font-bold">
+                                {selectedNumber}
+                              </p>
                             </div>
-                            {/* <p className="text-sm text-muted-foreground">
-                              Monthly cost
-                            </p>
-                            <p className="text-xl font-bold">$1.00</p> */}
+                            <div className="text-right">
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline">
+                                  {selectedCountry.flag}
+                                  {selectedCountry.name}
+                                </Badge>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowBuyDialog(false);
-                    resetPurchaseForm();
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handlePurchaseNumber}
-                  disabled={
-                    !selectedNumber ||
-                    purchasingNumber ||
-                    !phoneNumberName.trim()
-                  }
-                  className="w-full sm:w-auto"
-                >
-                  {purchasingNumber ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Processing Purchase...
-                    </>
-                  ) : (
-                    `Purchase ${selectedNumber}`
                   )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                </div>
+
+                <DialogFooter className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowBuyDialog(false);
+                      resetPurchaseForm();
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handlePurchaseNumber}
+                    disabled={
+                      !selectedNumber ||
+                      purchasingNumber ||
+                      !phoneNumberName.trim()
+                    }
+                    className="w-full sm:w-auto"
+                  >
+                    {purchasingNumber ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Processing ...
+                      </>
+                    ) : (
+                      `Get ${selectedNumber}`
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Success Alert */}
@@ -2842,29 +3048,83 @@ export default function PhoneNumbersPage() {
           </Alert>
         )}
 
-        {/* Business Primary Number Info Card */}
-        {business?.phone_main && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Primary Business Line Card */}
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Star className="h-5 w-5 text-primary fill-primary" />
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <Star className="h-5 w-5 text-primary fill-primary mt-1" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Primary Business Line</p>
-                    <p className="text-lg font-semibold">{business.phone_main}</p>
                     <p className="text-sm text-muted-foreground">
-                      This is the main number displayed to customers
+                      Primary Business Line
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {business?.phone_main || "Not set"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Main number displayed to customers
                     </p>
                   </div>
                 </div>
-                <Badge className="flex items-center gap-1 bg-primary hover:bg-primary">
-                  <Star className="h-3 w-3" />
-                  Primary
-                </Badge>
+                {business?.phone_main && (
+                  <Badge className="flex items-center gap-1 bg-primary hover:bg-primary">
+                    <Star className="h-3 w-3" />
+                    Primary
+                  </Badge>
+                )}
               </div>
             </CardContent>
           </Card>
-        )}
+
+          {/* Escalation Number Card */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <ShieldAlert className="h-5 w-5 text-amber-600 mt-1" />
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm text-muted-foreground">
+                        Escalation Number
+                      </p>
+                      <Badge variant="outline" className="text-xs">
+                        Urgent
+                      </Badge>
+                    </div>
+                    <p className="text-lg font-semibold">
+                      {business?.escalation_number || "Not set"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      For high-priority calls
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {business?.escalation_number ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEscalationDialog(true)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEscalationDialog(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Phone Endpoints Table */}
         <Card>
@@ -2873,7 +3133,8 @@ export default function PhoneNumbersPage() {
               <div>
                 <CardTitle>Your Phone Numbers</CardTitle>
                 <CardDescription>
-                  {phoneEndpoints.length} number{phoneEndpoints.length !== 1 ? "s" : ""} in your business
+                  {phoneEndpoints.length} number
+                  {phoneEndpoints.length !== 1 ? "s" : ""} in your business
                 </CardDescription>
               </div>
               <Button
@@ -2896,11 +3157,22 @@ export default function PhoneNumbersPage() {
                 </h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                   Purchase your first phone number to start receiving calls and
-                  messages. The first number will automatically become your primary business line.
+                  messages. The first number will automatically become your
+                  primary business line.
                 </p>
-                <Button onClick={() => setShowBuyDialog(true)} size="lg">
-                  Purchase Your First Number
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button onClick={() => setShowBuyDialog(true)} size="lg">
+                    Purchase Your First Number
+                  </Button>
+                  <Button
+                    onClick={() => setShowEscalationDialog(true)}
+                    variant="outline"
+                    size="lg"
+                  >
+                    <ShieldAlert className="h-4 w-4 mr-2" />
+                    Add Escalation Number
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -2926,7 +3198,9 @@ export default function PhoneNumbersPage() {
                                 size="sm"
                                 onClick={() => handleToggleStatus(endpoint)}
                                 className="h-6 px-2"
-                                disabled={endpoint.is_primary && endpoint.is_active}
+                                disabled={
+                                  endpoint.is_primary && endpoint.is_active
+                                }
                               >
                                 <Badge
                                   variant={
@@ -2960,7 +3234,7 @@ export default function PhoneNumbersPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">
-                            {endpoint.channel_type || 'voice'}
+                            {endpoint.channel_type || "voice"}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -2982,7 +3256,9 @@ export default function PhoneNumbersPage() {
                                   Set as Primary
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem onClick={() => handleEdit(endpoint)}>
+                              <DropdownMenuItem
+                                onClick={() => handleEdit(endpoint)}
+                              >
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Name
                               </DropdownMenuItem>

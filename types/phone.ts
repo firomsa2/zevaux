@@ -37,7 +37,7 @@ export interface PhoneEndpoint {
   id: string;
   business_id: string;
   phone_number: string;
-  channel_type: 'voice' | 'sms' | 'whatsapp' | null;
+  channel_type: "voice" | "sms" | "whatsapp" | null;
   status: string | null;
   created_at: string;
   name: string | null;
@@ -72,12 +72,12 @@ export interface PhoneNumber extends PhoneEndpoint {
 export interface CreatePhoneNumberData {
   phone_number: string;
   name?: string;
-  channel_type?: 'voice' | 'sms' | 'whatsapp';
+  channel_type?: "voice" | "sms" | "whatsapp";
 }
 
 // For updating phone numbers
 export interface UpdatePhoneNumberData extends Partial<CreatePhoneNumberData> {
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
   is_active?: boolean; // frontend convenience
 }
 
@@ -87,4 +87,7 @@ export interface PurchasePhoneNumberData {
   name: string;
   businessId: string;
   countryCode?: string;
+}
+export interface UpdateBusinessData {
+  escalation_number?: string | null;
 }

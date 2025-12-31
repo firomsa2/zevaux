@@ -535,13 +535,6 @@ export default function WebsiteForm() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Website Content</h1>
-        <p className="text-muted-foreground">
-          Import content from your website for AI training
-        </p>
-      </div>
-
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -552,8 +545,8 @@ export default function WebsiteForm() {
       <div className="space-y-6">
         {/* Add Website Form */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Globe className="h-5 w-5" />
               Add Website
             </CardTitle>
@@ -675,8 +668,8 @@ export default function WebsiteForm() {
 
         {/* Websites List */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Link className="h-5 w-5" />
               Imported Websites ({websites.length})
             </CardTitle>

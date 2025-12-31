@@ -366,15 +366,6 @@ export default function FAQsForm() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Frequently Asked Questions
-        </h1>
-        <p className="text-muted-foreground">
-          Add and manage FAQs for your AI receptionist
-        </p>
-      </div>
-
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -385,8 +376,8 @@ export default function FAQsForm() {
       <div className="space-y-6">
         {/* Add FAQ Form */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Plus className="h-5 w-5" />
               Add New FAQ
             </CardTitle>
@@ -528,10 +519,10 @@ export default function FAQsForm() {
 
         {/* FAQs List */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <MessageSquare className="h-5 w-5" />
                   Your FAQs ({filteredFAQs.length})
                 </CardTitle>

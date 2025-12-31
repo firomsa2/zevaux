@@ -2,39 +2,44 @@ import KnowledgeOverview from "@/components/knowledge/overview";
 import FAQsForm from "@/components/knowledge/faqs";
 import WebsiteForm from "@/components/knowledge/website";
 import DocumentsForm from "@/components/knowledge/documents";
-import TrainingForm from "@/components/knowledge/training";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileText, Globe, MessageSquare } from "lucide-react";
 
 export default function KnowledgePage() {
   return (
-    <div className="space-y-12">
-      {/* Overview stats and quick actions */}
+    <div className="space-y-6">
+      {/* Overview stats */}
       <KnowledgeOverview />
 
-      {/* Documents section */}
-      <section className="space-y-6">
-        {/* <h2 className="text-2xl font-semibold tracking-tight">Documents</h2> */}
-        <DocumentsForm />
-      </section>
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="documents" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+          <TabsTrigger value="documents" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Documents
+          </TabsTrigger>
+          <TabsTrigger value="faqs" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            FAQs
+          </TabsTrigger>
+          <TabsTrigger value="website" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Website
+          </TabsTrigger>
+        </TabsList>
 
-      {/* FAQs section */}
-      <section className="space-y-6">
-        {/* <h2 className="text-2xl font-semibold tracking-tight">FAQs</h2> */}
-        <FAQsForm />
-      </section>
+        <TabsContent value="documents" className="space-y-6">
+          <DocumentsForm />
+        </TabsContent>
 
-      {/* Website content section */}
-      <section className="space-y-6">
-        {/* <h2 className="text-2xl font-semibold tracking-tight">
-          Website Content
-        </h2> */}
-        <WebsiteForm />
-      </section>
+        <TabsContent value="faqs" className="space-y-6">
+          <FAQsForm />
+        </TabsContent>
 
-      {/* Training section */}
-      {/* <section className="space-y-6">
-        <h2 className="text-2xl font-semibold tracking-tight">AI Training</h2>
-        <TrainingForm />
-      </section> */}
+        <TabsContent value="website" className="space-y-6">
+          <WebsiteForm />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

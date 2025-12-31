@@ -345,11 +345,11 @@ const data = {
           url: "/dashboard/receptionist/configure",
           icon: Settings,
         },
-        // {
-        //   title: "Services",
-        //   url: "/dashboard/receptionist/services",
-        //   icon: Package,
-        // },
+        {
+          title: "Services",
+          url: "/dashboard/receptionist/services",
+          icon: Package,
+        },
         // {
         //   title: "AI Settings",
         //   url: "/dashboard/receptionist/ai",

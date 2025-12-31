@@ -6,7 +6,12 @@ import { ReceptionistSettings } from "./receptionist-settings";
 import { KnowledgeBaseSettings } from "./knowledge-base-settings";
 import { IntegrationSettings } from "./integration-settings";
 
-export function SettingsTabs({ user, profile, receptionistConfig }: any) {
+export function SettingsTabs({
+  user,
+  profile,
+  receptionistConfig,
+  integrations,
+}: any) {
   return (
     <Tabs defaultValue="profile" className="w-full">
       <TabsList className="grid w-full grid-cols-4">
@@ -32,7 +37,10 @@ export function SettingsTabs({ user, profile, receptionistConfig }: any) {
       </TabsContent>
 
       <TabsContent value="integrations" className="space-y-4">
-        <IntegrationSettings receptionistConfig={receptionistConfig} />
+        <IntegrationSettings
+          receptionistConfig={receptionistConfig}
+          integrations={integrations}
+        />
       </TabsContent>
     </Tabs>
   );

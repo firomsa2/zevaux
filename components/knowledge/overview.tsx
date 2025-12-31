@@ -179,14 +179,14 @@ export default function KnowledgeOverview() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Knowledge Base</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Knowledge Base</h1>
           <p className="text-muted-foreground">
             Enhance your AI receptionist with business-specific knowledge
           </p>
         </div>
         <Button asChild>
           <Link href="/dashboard/knowledge/documents">
-            <Upload className="mr-2 h-4 w-4" />
+            <Upload className=" h-4 w-4" />
             Upload Documents
           </Link>
         </Button>
@@ -200,14 +200,14 @@ export default function KnowledgeOverview() {
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="pb-0 pt-4">
+          <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Documents
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="flex items-center justify-between">
               <div className="text-3xl font-bold">{stats.total}</div>
               <Files className="h-8 w-8 text-muted-foreground" />
@@ -218,14 +218,14 @@ export default function KnowledgeOverview() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <div className="pb-2 pt-2">
+          <div>
+            <div className="text-sm font-medium text-muted-foreground ">
               Document Types
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+            </div>
+          </div>
+          <div className="pt-0">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4" />
@@ -248,17 +248,17 @@ export default function KnowledgeOverview() {
                 <span className="font-medium">{stats.byType.document}</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="pb-2 pt-2">
+          <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Processing Status
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
+          <CardContent className="pt-0">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <Badge className={getStatusColor("processed")}>Processed</Badge>
                 <span className="font-medium">{stats.byStatus.processed}</span>
@@ -277,13 +277,13 @@ export default function KnowledgeOverview() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="pb-2 pt-2">
+          <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Last Updated
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="text-center">
               {stats.lastUpdated ? (
                 <>
@@ -300,6 +300,101 @@ export default function KnowledgeOverview() {
             </div>
           </CardContent>
         </Card>
+      </div> */}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        {/* Total Documents */}
+        <div className="rounded-lg border bg-background px-4 py-3 flex flex-col justify-center">
+          <p className="text-xs font-medium text-muted-foreground mb-2 text-center">
+            Total Documents
+          </p>
+
+          <div className="flex items-center justify-center gap-4">
+            <span className="text-3xl font-bold">{stats.total}</span>
+            <Files className="h-8 w-8 text-muted-foreground" />
+          </div>
+
+          <p className="mt-1 text-xs text-muted-foreground text-center">
+            {stats.totalChunks} knowledge chunks
+          </p>
+        </div>
+
+        {/* Document Types */}
+        <div className="rounded-lg border bg-background px-4 py-3">
+          <p className="text-xs font-medium text-muted-foreground mb-3">
+            Document Types
+          </p>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <MessageSquare className="h-4 w-4" />
+                FAQs
+              </div>
+              <span className="font-medium">{stats.byType.faq}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <Globe className="h-4 w-4" />
+                Website
+              </div>
+              <span className="font-medium">{stats.byType.website}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <FileText className="h-4 w-4" />
+                Documents
+              </div>
+              <span className="font-medium">{stats.byType.document}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Processing Status */}
+        <div className="rounded-lg border bg-background px-4 py-3">
+          <p className="text-xs font-medium text-muted-foreground mb-3">
+            Processing Status
+          </p>
+
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Badge className={getStatusColor("processed")}>Processed</Badge>
+              <span className="font-medium">{stats.byStatus.processed}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Badge className={getStatusColor("processing")}>Processing</Badge>
+              <span className="font-medium">{stats.byStatus.processing}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Badge className={getStatusColor("pending")}>Pending</Badge>
+              <span className="font-medium">{stats.byStatus.pending}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Last Updated */}
+        <div className="rounded-lg border bg-background px-4 py-3 flex flex-col justify-center text-center">
+          <p className="text-xs font-medium text-muted-foreground mb-2">
+            Last Updated
+          </p>
+
+          {stats.lastUpdated ? (
+            <>
+              <p className="text-2xl font-bold">
+                {new Date(stats.lastUpdated).toLocaleDateString()}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {new Date(stats.lastUpdated).toLocaleTimeString()}
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">No documents yet</p>
+          )}
+        </div>
       </div>
 
       {/* Quick Actions */}

@@ -4,38 +4,69 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertCircle } from "lucide-react";
+import { UserIntegration } from "@/types/integrations";
 
-export function IntegrationSettings({ receptionistConfig }: any) {
-  const integrations = [
+interface IntegrationSettingsProps {
+  receptionistConfig: any;
+  integrations: UserIntegration[];
+}
+
+export function IntegrationSettings({
+  receptionistConfig,
+  integrations,
+}: IntegrationSettingsProps) {
+  const isGoogleConnected = integrations?.some(
+    (i) => i.provider === "google_calendar"
+  );
+  const isOutlookConnected = integrations?.some(
+    (i) => i.provider === "microsoft_outlook"
+  );
+
+  const handleConnect = (provider: string) => {
+    if (provider === "google_calendar") {
+      window.location.href = "/api/integrations/google/auth";
+    }
+    // Add other providers here
+  };
+
+  const integrationsList = [
+    // {
+    //   id: "vapi",
+    //   name: "Vapi",
+    //   description: "Voice AI platform for call handling",
+    //   status: receptionistConfig?.vapi_agent_id ? "connected" : "disconnected",
+    //   icon: "🎤",
+    //   provider: "vapi",
+    // },
     {
-      name: "Vapi",
-      description: "Voice AI platform for call handling",
-      status: receptionistConfig?.vapi_agent_id ? "connected" : "disconnected",
-      icon: "🎤",
-    },
-    {
+      id: "google_calendar",
       name: "Google Calendar",
       description: "Sync bookings with your calendar",
-      status: "disconnected",
+      status: isGoogleConnected ? "connected" : "disconnected",
       icon: "📅",
+      provider: "google_calendar",
     },
     {
+      id: "microsoft_outlook",
       name: "Outlook Calendar",
       description: "Sync bookings with Outlook",
-      status: "disconnected",
+      status: isOutlookConnected ? "connected" : "disconnected",
       icon: "📅",
+      provider: "microsoft_outlook",
     },
     {
+      id: "slack",
       name: "Slack",
       description: "Receive notifications in Slack",
       status: "disconnected",
       icon: "💬",
+      provider: "slack",
     },
   ];
 
   return (
     <div className="space-y-6">
-      {integrations.map((integration, idx) => (
+      {integrationsList.map((integration, idx) => (
         <Card key={idx}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -63,7 +94,17 @@ export function IntegrationSettings({ receptionistConfig }: any) {
                   )}
                   {integration.status}
                 </Badge>
-                <Button variant="outline" className="bg-transparent">
+                <Button
+                  variant="outline"
+                  className="bg-transparent"
+                  onClick={() => handleConnect(integration.provider)}
+                  disabled={
+                    integration.status === "connected" ||
+                    integration.provider === "vapi" ||
+                    integration.provider === "slack" ||
+                    integration.provider === "microsoft_outlook"
+                  }
+                >
                   {integration.status === "connected"
                     ? "Disconnect"
                     : "Connect"}

@@ -164,8 +164,15 @@ export default function DocumentsForm() {
       }
 
       // Guard against different return shapes: { success, data } or an array directly
-      const data = result && result.data ? result.data : Array.isArray(result) ? result : [];
-      const uploadDocs = (data as any[]).filter((doc: any) => doc.source_type === "upload");
+      const data =
+        result && result.data
+          ? result.data
+          : Array.isArray(result)
+          ? result
+          : [];
+      const uploadDocs = (data as any[]).filter(
+        (doc: any) => doc.source_type === "upload"
+      );
 
       // Transform to document format
       const docList = uploadDocs.map((doc) => ({
@@ -609,13 +616,6 @@ export default function DocumentsForm() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-        <p className="text-muted-foreground">
-          Upload documents to train your AI receptionist
-        </p>
-      </div>
-
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -626,18 +626,18 @@ export default function DocumentsForm() {
       <div className="space-y-6">
         {/* Upload Area */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Upload className="h-5 w-5" />
               Upload Documents
             </CardTitle>
             <CardDescription>
-              Upload PDFs, Word documents, text files, and more
+              Upload PDFs, Word documents, text files, and more (Max 10MB)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* File Drop Zone */}
-            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:bg-muted/50 transition-colors">
               <Input
                 type="file"
                 id="file-upload"
@@ -646,18 +646,17 @@ export default function DocumentsForm() {
                 accept={SUPPORTED_FORMATS.join(",")}
                 className="hidden"
               />
-              <Label htmlFor="file-upload" className="cursor-pointer flex">
-                <div className="space-y-4 mx-auto">
-                  <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <FileUp className="h-8 w-8 text-primary" />
+              <Label
+                htmlFor="file-upload"
+                className="cursor-pointer flex w-full"
+              >
+                <div className="space-y-2 mx-auto">
+                  <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <FileUp className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">
-                      Drag & drop files here or click to browse
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Supports {SUPPORTED_FORMATS.join(", ")} (Max 10MB per
-                      file)
+                    <p className="font-medium text-sm">
+                      Click to browse or drag files here
                     </p>
                   </div>
                 </div>

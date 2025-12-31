@@ -478,12 +478,11 @@ export function PhoneNumberAssignment({
       });
 
       // Convert "none" back to null
-      const phoneNumberId = selectedValue === "none" ? null : selectedValue;
+      const phoneNumberId = selectedValue === "none" ? "" : selectedValue;
 
-      const { error } = await phoneNumberService.assignToReceptionist(
+      const { error } = await phoneNumberService.setAsPrimary(
         phoneNumberId,
-        receptionistId,
-        orgId
+        receptionistId
       );
 
       if (error) {
