@@ -24,7 +24,7 @@ export default async function Page() {
     totalCalls: 0,
     avgDuration: "0m",
     successRate: "0%",
-    recentCalls: [],
+    recentCalls: [] as any[],
     isSetupComplete: false,
     businessName: "",
   };
