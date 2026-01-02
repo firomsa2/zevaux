@@ -116,7 +116,7 @@ export async function signUp(formData: FormData) {
       };
     }
 
-    revalidatePath("/", "layout");
+    revalidatePath("/dashboard", "layout");
 
     // Success - user created (might need email verification)
     return {
@@ -206,7 +206,7 @@ export async function signIn(formData: FormData) {
       };
     }
 
-    revalidatePath("/", "layout");
+    revalidatePath("/dashboard", "layout");
     return { status: "success", user: data.user };
   } catch (error: any) {
     console.error("Unexpected login error:", error);
