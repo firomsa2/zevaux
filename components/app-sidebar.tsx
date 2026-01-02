@@ -70,11 +70,11 @@
 //     { title: "Overview", url: "/dashboard", icon: Home },
 //     {
 //       title: "Receptionist",
-//       url: "/dashboard/receptionist",
+//       url: "/dashboard/dashboard",
 //       icon: Bot,
 //       items: [
-//         { title: "Agents", url: "/dashboard/receptionist/agent" },
-//         { title: "Flows", url: "/dashboard/receptionist/flows" },
+//         { title: "Agents", url: "/dashboard/dashboard/agent" },
+//         { title: "Flows", url: "/dashboard/dashboard/flows" },
 //       ],
 //     },
 //     { title: "Knowledge Base", url: "/dashboard/knowledge", icon: Files },
@@ -126,7 +126,7 @@
 //     },
 //     {
 //       title: "Receptionist",
-//       url: "/dashboard/receptionist",
+//       url: "/dashboard/dashboard",
 //       icon: BotIcon,
 //       items: [
 //         {

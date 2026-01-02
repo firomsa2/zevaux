@@ -1,5 +1,5 @@
-import { Metadata } from "next";
 import BusinessHoursForm from "@/components/receptionist/configure/business-hours";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Business Hours | Zevaux",

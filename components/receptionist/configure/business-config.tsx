@@ -280,7 +280,7 @@ export default function BusinessConfigForm() {
   //   }
   // };
 
-  // components/receptionist/configure/business-config.tsx (partial update)
+  // components/dashboard/configure/business-config.tsx (partial update)
   // Update the handleSubmit function:
 
   const handleSubmit = async (e: React.FormEvent) => {

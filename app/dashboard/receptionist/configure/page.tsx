@@ -1,5 +1,5 @@
-import { Metadata } from "next";
 import BusinessConfigForm from "@/components/receptionist/configure/business-config";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Business Configuration | Zevaux",

@@ -11,32 +11,71 @@ export default async function Page() {
     redirect("/auth/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
+  // Get user's business_id
+  const { data: userData } = await supabase
+    .from("users")
+    .select("business_id")
     .eq("id", user.id)
     .single();
 
-  const { data: receptionistConfig } = await supabase
-    .from("receptionist")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
+  const businessId = userData?.business_id;
 
-  return (
-    <>
-      <DashboardContent
-        user={user}
-        profile={profile}
-        receptionistConfig={receptionistConfig}
-      />
-      {/* <main className="p-6">
-        <h1 className="text-3xl font-bold mb-2">Welcome to Zevaux</h1>
-        <p className="text-gray-600">You’re logged in as {user?.email}</p>
-        <p className="text-gray-500 mt-4">
-          A new organization was automatically created for you.
-        </p>
-      </main> */}
-    </>
-  );
+  const dashboardData = {
+    totalCalls: 0,
+    avgDuration: "0m",
+    successRate: "0%",
+    recentCalls: [],
+    isSetupComplete: false,
+    businessName: "",
+  };
+
+  if (businessId) {
+    // Fetch Business Name
+    const { data: business } = await supabase
+      .from("businesses")
+      .select("name")
+      .eq("id", businessId)
+      .single();
+    dashboardData.businessName = business?.name || "";
+
+    // Check Setup (Phone Number)
+    const { count: phoneCount } = await supabase
+      .from("phone_endpoints")
+      .select("*", { count: "exact", head: true })
+      .eq("business_id", businessId);
+
+    dashboardData.isSetupComplete = (phoneCount || 0) > 0;
+
+    // Fetch Calls
+    const { data: calls } = await supabase
+      .from("call_logs")
+      .select("*")
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false });
+
+    if (calls && calls.length > 0) {
+      dashboardData.totalCalls = calls.length;
+
+      // Calculate Avg Duration
+      const totalMinutes = calls.reduce(
+        (acc, call) => acc + (parseFloat(call.minutes) || 0),
+        0
+      );
+      const avg = totalMinutes / calls.length;
+      dashboardData.avgDuration = `${avg.toFixed(1)}m`;
+
+      // Recent Calls (Top 5)
+      dashboardData.recentCalls = calls.slice(0, 5);
+
+      // Success Rate (Calls > 0.2 min / Total Calls) - Heuristic
+      const successfulCalls = calls.filter(
+        (c) => (parseFloat(c.minutes) || 0) > 0.2
+      ).length;
+      dashboardData.successRate = `${Math.round(
+        (successfulCalls / calls.length) * 100
+      )}%`;
+    }
+  }
+
+  return <DashboardContent user={user} data={dashboardData} />;
 }

@@ -1,12 +1,14 @@
 // "use client";
 // import { useEffect, useState } from "react";
-// import ReceptionistForm from "@/components/ReceptionistForm";
+// import ReceptionistForm from "@/components/dashboardForm";
 // import { getUserWithOrg } from "@/utils/supabase/user";
 // import { createClient } from "@/utils/supabase/client";
 // import { Button } from "@/components/ui/button";
 // import { Alert, AlertDescription } from "@/components/ui/alert";
 // import { AlertCircle, RefreshCw } from "lucide-react";
 // import { PhoneNumberAssignment } from "@/components/phone-number-assignment";
+
+import ReceptionistOverview from "@/components/receptionist/overview";
 
 // export default function ReceptionistPage() {
 //   const [receptionist, setReceptionist] = useState<any>(null);
@@ -110,7 +112,7 @@
 
 // "use client";
 // import { useEffect, useState } from "react";
-// import ReceptionistForm from "@/components/ReceptionistForm";
+// import ReceptionistForm from "@/components/dashboardForm";
 // import { getUserWithOrg } from "@/utils/supabase/user";
 // import { createClient } from "@/utils/supabase/client";
 // import { Button } from "@/components/ui/button";
@@ -300,8 +302,7 @@
 //   );
 // }
 
-
-import ReceptionistOverview from "@/components/receptionist/overview";
+// import ReceptionistOverview from "@/components/dashboard/overview";
 
 export default function ReceptionistPage() {
   return <ReceptionistOverview />;

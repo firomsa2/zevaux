@@ -1,5 +1,5 @@
-import { Metadata } from "next";
 import VoiceSettingsForm from "@/components/receptionist/configure/voice-settings";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Voice & Language | Zevaux",
