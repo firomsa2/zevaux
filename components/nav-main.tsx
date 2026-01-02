@@ -187,7 +187,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
@@ -213,6 +213,7 @@ export function NavMain({
   }[];
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [openItems, setOpenItems] = useState<string[]>(() => {
     // Initialize with items that are active or have active children
     return items
@@ -244,6 +245,28 @@ export function NavMain({
             item.items?.some((child) => pathname === child.url);
           const isOpen = openItems.includes(item.title);
 
+          if (!hasChildren) {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActiveParent}
+                  className={cn(
+                    "w-full flex items-center text-md text-secondary px-3 py-2.5 rounded-lg transition-all",
+                    isActiveParent
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : "hover:bg-accent hover:text-accent-foreground"
+                  )}
+                >
+                  <Link href={item.url} className="flex items-center gap-3">
+                    {Icon && <Icon className="h-4 w-4 shrink-0" />}
+                    <span className="truncate">{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          }
+
           return (
             <SidebarMenuItem key={item.title}>
               <Collapsible
@@ -254,63 +277,61 @@ export function NavMain({
                 {/* Parent Item */}
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
-                    asChild
+                    isActive={isActiveParent}
                     className={cn(
-                      "w-full flex items-center text-md text-secondary justify-between px-3 py-2.5 rounded-lg transition-all",
+                      "w-full flex items-center text-md text-secondary justify-between px-3 py-2.5 rounded-lg transition-all cursor-pointer",
                       isActiveParent
                         ? "bg-primary text-primary-foreground font-medium"
                         : "hover:bg-accent hover:text-accent-foreground"
                     )}
+                    onClick={() => {
+                      if (item.url && item.url !== "#") {
+                        router.push(item.url);
+                      }
+                    }}
                   >
-                    <div>
-                      <Link
-                        href={item.url}
-                        className="flex items-center gap-3 flex-1"
-                      >
-                        {Icon && <Icon className="h-4 w-4 shrink-0" />}
-                        <span className="truncate">{item.title}</span>
-                      </Link>
-                      {hasChildren && (
-                        <ChevronRight className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                      )}
+                    <div className="flex items-center gap-3 w-full">
+                      {Icon && <Icon className="h-4 w-4 shrink-0" />}
+                      <span className="truncate flex-1 text-left">
+                        {item.title}
+                      </span>
+                      <ChevronRight className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </div>
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
 
                 {/* Child Items */}
-                {hasChildren && (
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    <SidebarMenuSub className="mt-1">
-                      {item.items?.map((child) => {
-                        const ChildIcon = child.icon;
-                        const isActiveChild = pathname === child.url;
+                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                  <SidebarMenuSub className="mt-1">
+                    {item.items?.map((child) => {
+                      const ChildIcon = child.icon;
+                      const isActiveChild = pathname === child.url;
 
-                        return (
-                          <SidebarMenuSubItem key={child.title}>
-                            <SidebarMenuSubButton
-                              asChild
-                              className={cn(
-                                "pl-3 pr-3 py-2 text-sm text-secondary rounded-lg transition-colors",
-                                isActiveChild
-                                  ? "bg-secondary text-secondary-foreground font-medium"
-                                  : "hover:bg-accent hover:text-accent-foreground"
-                              )}
-                            >
-                              <Link href={child.url}>
-                                <div className="flex items-center gap-3">
-                                  {ChildIcon && (
-                                    <ChildIcon className="h-3.5 w-3.5" />
-                                  )}
-                                  <span>{child.title}</span>
-                                </div>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                )}
+                      return (
+                        <SidebarMenuSubItem key={child.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            className={cn(
+                              "pl-3 pr-3 py-2 text-sm text-secondary rounded-lg transition-colors",
+                              isActiveChild
+                                ? "bg-secondary text-secondary-foreground font-medium"
+                                : "hover:bg-accent hover:text-accent-foreground"
+                            )}
+                          >
+                            <Link href={child.url}>
+                              <div className="flex items-center gap-3">
+                                {ChildIcon && (
+                                  <ChildIcon className="h-3.5 w-3.5" />
+                                )}
+                                <span>{child.title}</span>
+                              </div>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      );
+                    })}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
               </Collapsible>
             </SidebarMenuItem>
           );

@@ -28,14 +28,14 @@ export default async function CallDetail({
       <h2 className="text-2xl font-bold mb-3">Call Detail</h2>
       <div className="bg-white p-4 rounded shadow mb-4">
         <p>
-          <strong>Caller:</strong> {call.caller_phone}
+          <strong>Caller:</strong> {call.caller}
         </p>
         <p>
-          <strong>Started:</strong> {new Date(call.started_at).toLocaleString()}
+          <strong>Started:</strong> {new Date(call.start_time).toLocaleString()}
         </p>
         <p>
           <strong>Ended:</strong>{" "}
-          {call.ended_at ? new Date(call.ended_at).toLocaleString() : "Live"}
+          {call.end_time ? new Date(call.end_time).toLocaleString() : "Live"}
         </p>
         <p>
           <strong>Duration:</strong> {call.minutes ?? "–"} min

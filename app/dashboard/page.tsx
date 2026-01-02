@@ -30,13 +30,13 @@ export default async function Page() {
         profile={profile}
         receptionistConfig={receptionistConfig}
       />
-      <main className="p-6">
+      {/* <main className="p-6">
         <h1 className="text-3xl font-bold mb-2">Welcome to Zevaux</h1>
         <p className="text-gray-600">You’re logged in as {user?.email}</p>
         <p className="text-gray-500 mt-4">
           A new organization was automatically created for you.
         </p>
-      </main>
+      </main> */}
     </>
   );
 }

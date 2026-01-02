@@ -13,15 +13,15 @@ export function SettingsTabs({
   integrations,
 }: any) {
   return (
-    <Tabs defaultValue="profile" className="w-full">
+    <Tabs defaultValue="integrations" className="w-full">
       <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="profile">Profile</TabsTrigger>
+        {/* <TabsTrigger value="profile">Profile</TabsTrigger>
         <TabsTrigger value="receptionist">Receptionist</TabsTrigger>
-        <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+        <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger> */}
         <TabsTrigger value="integrations">Integrations</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="profile" className="space-y-4">
+      {/* <TabsContent value="profile" className="space-y-4">
         <ProfileSettings user={user} profile={profile} />
       </TabsContent>
 
@@ -34,7 +34,7 @@ export function SettingsTabs({
 
       <TabsContent value="knowledge" className="space-y-4">
         <KnowledgeBaseSettings userId={user.id} />
-      </TabsContent>
+      </TabsContent> */}
 
       <TabsContent value="integrations" className="space-y-4">
         <IntegrationSettings

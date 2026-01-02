@@ -34,23 +34,25 @@ export default function CallsPage() {
         return;
       }
 
-      setOrgId(orgId);
-      console.log("🚀 ~ Fetching calls for org:", orgId);
+      setOrgId(businessId);
+      console.log("🚀 ~ Fetching calls for org:", businessId);
 
       // First, fetch calls with organization filter
       let callsQuery = supabase
-        .from("calls")
+        .from("call_logs")
         .select("*")
-        .eq("org_id", orgId)
+        .eq("business_id", businessId)
         .order("created_at", { ascending: false })
         .limit(50);
 
+      console.log("🚀 ~ Calls query before filters:", callsQuery);
       // Apply filters
-      if (filter === "active") callsQuery = callsQuery.is("ended_at", null);
+      if (filter === "active") callsQuery = callsQuery.is("end_time", null);
       if (filter === "completed")
-        callsQuery = callsQuery.not("ended_at", "is", null);
+        callsQuery = callsQuery.not("end_time", "is", null);
 
       const { data: callsData, error: callsError } = await callsQuery;
+      console.log("🚀 ~ Fetched calls data:", callsData, callsError);
 
       if (callsError) {
         console.error("Error fetching calls:", callsError);

@@ -32,6 +32,8 @@ import {
   retryDocument,
 } from "@/actions/knowledge";
 
+import { triggerKnowledgeWebsiteWebhook } from "@/utils/webhooks";
+
 interface Website {
   id: string;
   url: string;
@@ -181,6 +183,11 @@ export default function WebsiteForm() {
 
       if (!result.success) {
         throw new Error(result.error);
+      }
+
+      // Trigger webhook
+      if (businessId) {
+        await triggerKnowledgeWebsiteWebhook(businessId, newWebsite.url);
       }
 
       // Reset form

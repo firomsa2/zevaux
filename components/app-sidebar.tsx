@@ -313,18 +313,15 @@ import {
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { NavProjects } from "./nav-projects";
+import { getUserWithBusiness } from "@/utils/supabase/user";
+import { getBusinessById } from "@/utils/supabase/business";
 
 const data = {
   teams: [
     {
-      name: "Glow & Grace Hair Studio",
+      name: "Loading...",
       logo: Building,
       plan: "Pro",
-    },
-    {
-      name: "Main Street Dental",
-      logo: Shield,
-      plan: "Starter",
     },
   ],
   navMain: [
@@ -406,21 +403,21 @@ const data = {
       icon: Phone,
       isActive: false,
       items: [
-        {
-          title: "Manage Numbers",
-          url: "/dashboard/phone-numbers/manage",
-          icon: Phone,
-        },
-        {
-          title: "Assignments",
-          url: "/dashboard/phone-numbers/assign",
-          icon: Users,
-        },
-        {
-          title: "Call Routing",
-          url: "/dashboard/phone-numbers/routing",
-          icon: Bell,
-        },
+        // {
+        //   title: "Manage Numbers",
+        //   url: "/dashboard/phone-numbers/manage",
+        //   icon: Phone,
+        // },
+        // {
+        //   title: "Assignments",
+        //   url: "/dashboard/phone-numbers/assign",
+        //   icon: Users,
+        // },
+        // {
+        //   title: "Call Routing",
+        //   url: "/dashboard/phone-numbers/routing",
+        //   icon: Bell,
+        // },
       ],
     },
     {
@@ -429,26 +426,26 @@ const data = {
       icon: PhoneCall,
       isActive: false,
       items: [
-        {
-          title: "All Calls",
-          url: "/dashboard/calls/all",
-          icon: PhoneCall,
-        },
-        {
-          title: "Voicemails",
-          url: "/dashboard/calls/voicemail",
-          icon: Mic,
-        },
-        {
-          title: "Missed Calls",
-          url: "/dashboard/calls/missed",
-          icon: Clock,
-        },
-        {
-          title: "Analytics",
-          url: "/dashboard/calls/analytics",
-          icon: BarChart,
-        },
+        // {
+        //   title: "All Calls",
+        //   url: "/dashboard/calls/all",
+        //   icon: PhoneCall,
+        // },
+        // {
+        //   title: "Voicemails",
+        //   url: "/dashboard/calls/voicemail",
+        //   icon: Mic,
+        // },
+        // {
+        //   title: "Missed Calls",
+        //   url: "/dashboard/calls/missed",
+        //   icon: Clock,
+        // },
+        // {
+        //   title: "Analytics",
+        //   url: "/dashboard/calls/analytics",
+        //   icon: BarChart,
+        // },
       ],
     },
     {
@@ -457,21 +454,21 @@ const data = {
       icon: MessageCircle,
       isActive: false,
       items: [
-        {
-          title: "Inbox",
-          url: "/dashboard/sms/inbox",
-          icon: MessageSquare,
-        },
-        {
-          title: "Automations",
-          url: "/dashboard/sms/automations",
-          icon: Zap,
-        },
-        {
-          title: "Templates",
-          url: "/dashboard/sms/templates",
-          icon: Files,
-        },
+        // {
+        //   title: "Inbox",
+        //   url: "/dashboard/sms/inbox",
+        //   icon: MessageSquare,
+        // },
+        // {
+        //   title: "Automations",
+        //   url: "/dashboard/sms/automations",
+        //   icon: Zap,
+        // },
+        // {
+        //   title: "Templates",
+        //   url: "/dashboard/sms/templates",
+        //   icon: Files,
+        // },
       ],
     },
   ],
@@ -491,26 +488,58 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [user, setUser] = React.useState<User | null>(null);
+  const [teams, setTeams] = React.useState(data.teams);
 
+  console.log("🚀 ~ Sidebar render, user:", user, "teams:", teams);
   React.useEffect(() => {
-    async function getUser() {
-      const supabase = await createClient();
-      const { data, error } = await supabase.auth.getUser();
+    async function loadData() {
+      try {
+        const {
+          user: userData,
+          businessId,
+          error,
+        } = await getUserWithBusiness();
+        console.log("🚀 ~ Sidebar fetched user with business:", {
+          userData,
+          businessId,
+          error,
+        });
 
-      if (error) {
-        console.error("Error fetching user:", error.message);
-        console.log("No user is logged in.");
-      } else {
-        setUser(data?.user);
+        if (userData) {
+          setUser(userData);
+        }
+
+        if (businessId) {
+          const { data: businessData } = await getBusinessById(businessId);
+          if (businessData) {
+            setTeams([
+              {
+                name: businessData.name,
+                logo: Building,
+                plan: businessData.billing_plan || "Pro",
+              },
+            ]);
+          }
+        }
+        console.log("🚀 ~ Sidebar updated teams:", teams);
+      } catch (error) {
+        console.error("Error loading sidebar data:", error);
       }
     }
-    getUser();
+    loadData();
   }, []);
+
+  console.log(
+    "🚀 ~ Sidebar render after data load, user:",
+    user,
+    "teams:",
+    teams
+  );
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

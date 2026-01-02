@@ -189,3 +189,48 @@
     @apply bg-background text-foreground;
   }
 }
+/* app/globals.css */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 1000px 100%;
+}
+
+/* app/globals.css */
+/* Smooth transitions for footer elements */
+.footer-link {
+  @apply transition-all duration-200 hover:translate-x-1;
+}
+
+/* Gradient underline animation */
+.gradient-underline {
+  @apply relative inline-block;
+}
+
+.gradient-underline::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/70 transition-all duration-300;
+}
+
+.gradient-underline:hover::after {
+  @apply w-full;
+}
+
+/* Trust badge glow effect */
+.trust-badge {
+  @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/20;
+}
+
+/* Social icon hover effects */
+.social-icon {
+  @apply transition-all duration-300 hover:scale-110 hover:rotate-3;
+}

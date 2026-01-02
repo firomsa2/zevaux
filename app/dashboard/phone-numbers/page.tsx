@@ -2358,7 +2358,26 @@ export default function PhoneNumbersPage() {
         setShowBuyDialog(false);
         resetPurchaseForm();
         // Wait a bit for n8n to save to Supabase, then refresh
-        setTimeout(() => {
+        setTimeout(async () => {
+          try {
+            // Check if this is the first number and set as primary if needed
+            const { data: phones, business } =
+              await phoneNumberService.getPhoneNumbers(businessId);
+
+            if (phones && phones.length === 1 && !business?.phone_main) {
+              console.log(
+                "Auto-setting primary number:",
+                phones[0].phone_number
+              );
+              await phoneNumberService.setAsPrimary(
+                phones[0].phone_number,
+                businessId
+              );
+            }
+          } catch (e) {
+            console.error("Error auto-setting primary number", e);
+          }
+
           loadPhoneEndpoints();
         }, 2000);
       } else {
@@ -2777,12 +2796,11 @@ export default function PhoneNumbersPage() {
                 <DialogHeader>
                   <DialogTitle>Get New Phone Number</DialogTitle>
                   <DialogDescription>
-                    Search for available numbers and get through our n8n
-                    integration
+                    Search for available numbers
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
+                <div className="space-y-6">
                   {/* Alerts */}
                   {error && (
                     <Alert variant="destructive">
@@ -2937,10 +2955,10 @@ export default function PhoneNumbersPage() {
                   {/* Step 4: Configure & Purchase */}
                   {selectedNumber && (
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">Configure & Get</h3>
+                      {/* <h3 className="text-lg font-semibold">Configure & Get</h3> */}
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="phoneName">Friendly Name *</Label>
+                          <Label htmlFor="phoneName">Add Name</Label>
                           <Input
                             id="phoneName"
                             placeholder="e.g., Main Business Line, Support Hotline"
@@ -2949,8 +2967,7 @@ export default function PhoneNumbersPage() {
                             required
                           />
                           <p className="text-sm text-muted-foreground">
-                            This name will help you identify this number in your
-                            dashboard
+                            This name will help you identify this number
                           </p>
                         </div>
 
@@ -2965,7 +2982,7 @@ export default function PhoneNumbersPage() {
                             <div className="text-right">
                               <div className="flex items-center gap-2 mt-1">
                                 <Badge variant="outline">
-                                  {selectedCountry.flag}
+                                  {/* {selectedCountry.flag} */}
                                   {selectedCountry.name}
                                 </Badge>
                               </div>
@@ -2992,11 +3009,7 @@ export default function PhoneNumbersPage() {
                   <Button
                     type="button"
                     onClick={handlePurchaseNumber}
-                    disabled={
-                      !selectedNumber ||
-                      purchasingNumber ||
-                      !phoneNumberName.trim()
-                    }
+                    disabled={!selectedNumber || purchasingNumber}
                     className="w-full sm:w-auto"
                   >
                     {purchasingNumber ? (
@@ -3156,13 +3169,13 @@ export default function PhoneNumbersPage() {
                   No phone numbers yet
                 </h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Purchase your first phone number to start receiving calls and
+                  Get your first phone number to start receiving calls and
                   messages. The first number will automatically become your
                   primary business line.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button onClick={() => setShowBuyDialog(true)} size="lg">
-                    Purchase Your First Number
+                    Get Your First Number
                   </Button>
                   <Button
                     onClick={() => setShowEscalationDialog(true)}

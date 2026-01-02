@@ -104,9 +104,9 @@ export default async function SettingsPage() {
 
         <SettingsTabs
           user={user}
+          integrations={integrations || []}
           profile={profile}
           receptionistConfig={receptionistConfig}
-          integrations={integrations || []}
         />
       </div>
     </main>

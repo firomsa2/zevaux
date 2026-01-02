@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { triggerPromptWebhook } from "@/utils/webhooks";
+
 const DAYS = [
   { id: "monday", label: "Monday" },
   { id: "tuesday", label: "Tuesday" },
@@ -276,6 +278,9 @@ export default function BusinessHoursForm() {
       if (promptError) {
         console.warn("Prompt update failed:", promptError);
       }
+
+      // Trigger webhook
+      await triggerPromptWebhook(businessId);
 
       toast({
         title: "Success",

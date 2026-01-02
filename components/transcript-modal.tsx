@@ -263,8 +263,8 @@ export function TranscriptModal({
             Call Transcript
           </DialogTitle>
           <DialogDescription>
-            Call with {call.caller_phone} on{" "}
-            {new Date(call.started_at).toLocaleString()}
+            Call with {call.caller} on{" "}
+            {new Date(call.start_time).toLocaleString()}
           </DialogDescription>
         </DialogHeader>
 
@@ -272,8 +272,8 @@ export function TranscriptModal({
           {/* Call Info */}
           <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
             <div className="flex items-center gap-4">
-              <Badge variant={call.ended_at ? "secondary" : "default"}>
-                {call.ended_at ? "Completed" : "Active"}
+              <Badge variant={call.end_time ? "secondary" : "default"}>
+                {call.end_time ? "Completed" : "Active"}
               </Badge>
               <span className="text-sm">
                 Duration:{" "}
@@ -317,7 +317,7 @@ export function TranscriptModal({
             </TabsContent>
 
             <TabsContent value="full">
-              <ScrollArea className="h-[400px] rounded-lg border">
+              <ScrollArea className="h-[320px] rounded-lg border">
                 <div className="p-4 space-y-4">
                   {transcript?.content ? (
                     parseTranscript(transcript.content).map((message) => (

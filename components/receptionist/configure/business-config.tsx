@@ -81,6 +81,8 @@ const TONES = [
   "Calm and reassuring",
 ];
 
+import { triggerPromptWebhook } from "@/utils/webhooks";
+
 export default function BusinessConfigForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -349,6 +351,9 @@ export default function BusinessConfigForm() {
       if (promptError) {
         console.warn("Prompt update failed:", promptError);
       }
+
+      // Trigger webhook
+      await triggerPromptWebhook(businessId);
 
       setSuccess(true);
       toast({

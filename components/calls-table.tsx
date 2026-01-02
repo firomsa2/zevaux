@@ -256,7 +256,8 @@ export function CallsTable({ calls, loading, onRefresh }: CallsTableProps) {
   useEffect(() => {
     const filtered = calls.filter(
       (call) =>
-        call.caller_phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        call.caller?.includes(searchTerm.toLowerCase()) ||
+        // call.caller_phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
         call.transcript?.summary
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
@@ -278,7 +279,7 @@ export function CallsTable({ calls, loading, onRefresh }: CallsTableProps) {
   };
 
   const getStatusBadge = (call: CallWithTranscript) => {
-    if (!call.ended_at) {
+    if (!call.end_time) {
       return (
         <Badge className="bg-green-100 text-green-800 border-green-200">
           Live
@@ -375,15 +376,15 @@ export function CallsTable({ calls, loading, onRefresh }: CallsTableProps) {
                     <TableRow key={call.id} className="hover:bg-muted/50">
                       <TableCell>{getStatusBadge(call)}</TableCell>
                       <TableCell className="font-medium">
-                        {call.caller_phone}
+                        {call.caller}
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {formatDate(call.started_at)}
+                          {formatDate(call.start_time)}
                         </div>
-                        {call.ended_at && (
+                        {call.end_time && (
                           <div className="text-xs text-muted-foreground">
-                            Ended: {formatDate(call.ended_at)}
+                            Ended: {formatDate(call.end_time)}
                           </div>
                         )}
                       </TableCell>

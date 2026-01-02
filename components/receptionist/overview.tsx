@@ -443,7 +443,7 @@ export default function ReceptionistOverview() {
       </div> */}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="hover:shadow-md transition-shadow">
+        {/* <Card className="hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Bot className="h-5 w-5" />
@@ -456,6 +456,22 @@ export default function ReceptionistOverview() {
           <CardContent>
             <Button variant="outline" className="w-full" asChild>
               <Link href="/dashboard/receptionist/ai">Configure AI</Link>
+            </Button>
+          </CardContent>
+        </Card> */}
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Voice & Language
+            </CardTitle>
+            <CardDescription>
+              Set voice profile and language preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full" asChild>
+              <Link href="/dashboard/receptionist/voice">Voice Settings</Link>
             </Button>
           </CardContent>
         </Card>

@@ -31,8 +31,8 @@ export function DashboardContent({ user, profile, receptionistConfig }: any) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/dashboard/setup">
-                <Button className="btn-primary">Start Setup Wizard</Button>
+              <Link href="/dashboard/receptionist/configure">
+                <Button className="btn-primary">Start Setup</Button>
               </Link>
             </CardContent>
           </Card>
@@ -110,7 +110,10 @@ export function DashboardContent({ user, profile, receptionistConfig }: any) {
               <Phone className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No calls yet. Start your setup to begin receiving calls.</p>
               {!isSetupComplete && (
-                <Link href="/dashboard/setup">
+                <Link
+                  href="/dashboard/receptionist/configure"
+                  className="mt-4 block"
+                >
                   <Button className="mt-4 btn-primary">Complete Setup</Button>
                 </Link>
               )}

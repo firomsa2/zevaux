@@ -39,6 +39,8 @@ import {
   deleteDocument as deleteDocumentAction,
 } from "@/actions/knowledge";
 
+import { triggerKnowledgeDocumentWebhook } from "@/utils/webhooks";
+
 interface Document {
   id: string;
   file_name: string;
@@ -225,6 +227,15 @@ export default function DocumentsForm() {
 
         if (!result.success) {
           throw new Error(`Failed to upload ${file.name}: ${result.error}`);
+        }
+
+        // Trigger webhook for processing
+        if (result.data && businessId) {
+          await triggerKnowledgeDocumentWebhook(
+            businessId,
+            String(result.data.id),
+            result.data.file_path
+          );
         }
 
         // Add to local state
