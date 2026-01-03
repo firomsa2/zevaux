@@ -224,15 +224,16 @@ export default function DocumentsForm() {
 
         // Upload using server action
         const result = await uploadDocument(formData);
+        console.log("Upload result:", result);
 
         if (!result.success) {
           throw new Error(`Failed to upload ${file.name}: ${result.error}`);
         }
 
         // Trigger webhook for processing
-        if (result.data && businessId) {
+        if (result.data) {
           await triggerKnowledgeDocumentWebhook(
-            businessId,
+            result.data.business_id,
             String(result.data.id),
             result.data.file_path
           );

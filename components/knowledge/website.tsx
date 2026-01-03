@@ -181,13 +181,17 @@ export default function WebsiteForm() {
         language: newWebsite.language,
       });
 
+      console.log("Add website result:", result);
       if (!result.success) {
         throw new Error(result.error);
       }
 
       // Trigger webhook
-      if (businessId) {
-        await triggerKnowledgeWebsiteWebhook(businessId, newWebsite.url);
+      if (result.data) {
+        await triggerKnowledgeWebsiteWebhook(
+          result.data.business_id,
+          newWebsite.url
+        );
       }
 
       // Reset form
