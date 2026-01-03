@@ -23,8 +23,8 @@ const PLANS = [
       { text: "Multilingual Support", included: false },
       { text: "Advanced Routing", included: false },
     ],
-    cta: "Start Free Trial",
-    trial: "14-day free trial",
+    cta: "Get 500 Free Minutes",
+    trial: "Includes 500 free minutes",
   },
   {
     name: "Professional",
@@ -46,26 +46,6 @@ const PLANS = [
     cta: "Get Started",
     trial: "Most Popular Choice",
   },
-  {
-    name: "Enterprise",
-    description: "For large organizations",
-    price: "Custom",
-    period: "",
-    popular: false,
-    gradient: "from-purple-500 to-purple-600",
-    features: [
-      { text: "Unlimited minutes", included: true },
-      { text: "Everything in Professional", included: true },
-      { text: "Dedicated Account Manager", included: true },
-      { text: "Custom AI Development", included: true },
-      { text: "SLA 99.9% Uptime", included: true },
-      { text: "Advanced Security", included: true },
-      { text: "Custom Integrations", included: true },
-      { text: "Training & Onboarding", included: true },
-    ],
-    cta: "Contact Sales",
-    trial: "Volume discounts available",
-  },
 ];
 
 export default function PricingSection() {
@@ -84,12 +64,12 @@ export default function PricingSection() {
             Simple, Transparent Pricing
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-8">
-            Choose the perfect plan for your business. All plans include a
-            14-day free trial.
+            Choose the perfect plan for your business. Get started with 500 free
+            minutes.
           </p>
 
           {/* Billing Toggle */}
-          <div className="inline-flex items-center gap-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-full mb-8">
+          {/* <div className="inline-flex items-center gap-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-full mb-8">
             <Button
               variant={billingCycle === "monthly" ? "default" : "ghost"}
               onClick={() => setBillingCycle("monthly")}
@@ -115,11 +95,11 @@ export default function PricingSection() {
                 Save 20%
               </span>
             </Button>
-          </div>
+          </div> */}
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {PLANS.map((plan, index) => (
             <div key={index} className="relative">
               {plan.popular && (
@@ -184,7 +164,7 @@ export default function PricingSection() {
                   className={`w-full py-6 text-lg font-semibold ${
                     plan.popular
                       ? "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white"
-                      : "bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 hover:from-primary/10 hover:to-primary/5 text-gray-900 dark:text-white border"
+                      : "bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 hover:from-primary/10 hover:to-primary/5 text-gray-900 dark:text-white border hover:text-accent"
                   }`}
                 >
                   {plan.cta}
@@ -244,7 +224,7 @@ export default function PricingSection() {
         </div> */}
 
         {/* Trust Badges */}
-        <div className="mt-16 text-center">
+        {/* <div className="mt-16 text-center">
           <p className="text-gray-600 dark:text-gray-400 mb-8">
             Trusted by 5,000+ businesses worldwide
           </p>
@@ -266,7 +246,7 @@ export default function PricingSection() {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

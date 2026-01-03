@@ -2162,7 +2162,11 @@ export default function HeroVerticalFixed() {
               className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-6 rounded-xl text-lg font-semibold shadow-xl hover:shadow-2xl transition-all hover:scale-105 group"
               asChild
             >
-              <Link href="/checkout" className="flex items-center gap-2">
+              {/* <Link href="/checkout" className="flex items-center gap-2">
+                Start Free Trial - 500 Minutes
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link> */}
+              <Link href="/login" className="flex items-center gap-2">
                 Start Free Trial - 500 Minutes
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>

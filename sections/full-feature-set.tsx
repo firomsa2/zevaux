@@ -153,7 +153,10 @@ export default function FullFeatureSet() {
   const ActiveIcon = FEATURES[activeFeature].icon;
 
   return (
-    <section className="py-2 lg:py-4 bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900">
+    <section
+      id="features"
+      className="py-2 lg:py-4 bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-900"
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -244,7 +247,7 @@ export default function FullFeatureSet() {
                 <div className="mt-0 pt-0 border-t border-gray-100 dark:border-gray-700/50 align-bottom">
                   <div className="flex items-center justify-between">
                     <span className=" text-xs text-gray-500 dark:text-gray-400">
-                      Click to learn more
+                      {/* Click to learn more */}
                     </span>
                     <div
                       className={cn(

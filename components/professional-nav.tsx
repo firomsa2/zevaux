@@ -150,9 +150,14 @@ export default async function ProfessionalNav() {
                     Sign In
                   </Button>
                 </Link>
-                <Link href="/checkout">
+                {/* <Link href="/checkout">
                   <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
                     Start Free Trial
+                  </Button>
+                </Link> */}
+                <Link href="/signup">
+                  <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+                    Get Started
                   </Button>
                 </Link>
               </>

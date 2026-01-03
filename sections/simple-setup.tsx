@@ -43,7 +43,7 @@ const SETUP_STEPS = [
     icon: Settings,
     color: "from-purple-500 to-pink-500",
     features: [
-      "10+ professional voices",
+      "5+ professional voices",
       "Custom business hours",
       "Smart call routing",
       "Real-time updates",
@@ -60,7 +60,7 @@ const SETUP_STEPS = [
     features: [
       "Live call monitoring",
       "Performance analytics",
-      "Revenue tracking",
+      // "Revenue tracking",
       "24/7 uptime",
     ],
     image: "📊",
@@ -105,7 +105,7 @@ export default function SimpleSetup() {
   return (
     <section className="py-2 lg:py-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-12">
+        <div className="text-center max-w-4xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/15 to-primary/10 dark:from-primary/20 dark:to-primary/10 px-4 py-2 rounded-full mb-6">
             <Zap className="w-4 h-4 text-primary" />
             <span className="text-sm font-semibold text-gray-800 dark:text-white">
@@ -114,15 +114,14 @@ export default function SimpleSetup() {
           </div>
 
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            Your AI-powered front desk,
-            <span className="block bg-gradient-to-r from-primary via-primary/80 to-primary/60 dark:from-blue-400 dark:via-primary dark:to-purple-400 bg-clip-text text-transparent">
-              ready in 3 steps
-            </span>
+            Your AI front desk, live in minutes
+            {/* <span className="block bg-gradient-to-r from-primary via-primary/80 to-primary/60 dark:from-blue-400 dark:via-primary dark:to-purple-400 bg-clip-text text-transparent">
+              live in minutes
+            </span> */}
           </h2>
 
           <p className="text-xl text-gray-700 dark:text-gray-300">
-            Getting started with Zevaux takes minutes – no IT setup or complex
-            integrations required.
+            Three simple steps to start receiving calls.
           </p>
         </div>
 
@@ -208,9 +207,9 @@ export default function SimpleSetup() {
         </div>
 
         {/* Integrations Section */}
-        <div className="bg-gradient-to-br from-primary/5 via-primary/5 to-primary/10 dark:from-primary/10 dark:via-primary/5 dark:to-primary/15 rounded-2xl p-8 md:p-12 border border-primary/20">
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div>
+        {/* <div className="bg-gradient-to-br from-primary/5 via-primary/5 to-primary/10 dark:from-primary/10 dark:via-primary/5 dark:to-primary/15 rounded-2xl p-8 md:p-12 border border-primary/20"> */}
+        {/* <div className="grid lg:grid-cols-2 gap-8 items-center"> */}
+        {/* <div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                 Works with your existing systems
               </h3>
@@ -244,9 +243,9 @@ export default function SimpleSetup() {
                   ))}
                 </div>
               </div>
-            </div>
+            </div> */}
 
-            <div>
+        {/* <div>
               <div className="grid grid-cols-3 gap-4">
                 {INTEGRATIONS.map((integration, index) => (
                   <div
@@ -264,11 +263,11 @@ export default function SimpleSetup() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
+            </div> */}
+        {/* </div> */}
 
-          {/* CTA Button */}
-          <div className="text-center mt-10">
+        {/* CTA Button */}
+        {/* <div className="text-center mt-10">
             <Button className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-6 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105">
               Start your free setup
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -276,8 +275,8 @@ export default function SimpleSetup() {
             <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
               No credit card required • 14-day free trial • Cancel anytime
             </p>
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
       </div>
     </section>
   );

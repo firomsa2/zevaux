@@ -1407,6 +1407,7 @@ import FinalCTASection from "@/sections/final-cta-section";
 import ProfessionalFooter from "@/components/professional-footer";
 import SimpleSetup from "@/sections/simple-setup";
 import FullFeatureSet from "@/sections/full-feature-set";
+import CustomersSection from "@/sections/customers-section";
 
 export default function Home() {
   return (
@@ -1415,10 +1416,11 @@ export default function Home() {
       <HeroSection />
       {/* <ProblemStatement /> */}
       <FullFeatureSet />
-      <SimpleSetup />
       {/* <FeaturesShowcase /> */}
       {/* <IntegrationsSection /> */}
+      <CustomersSection />
       <PricingSection />
+      <SimpleSetup />
       <FAQSection />
       {/* <FinalCTASection /> */}
       <ProfessionalFooter />
