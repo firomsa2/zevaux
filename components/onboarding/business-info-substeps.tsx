@@ -115,6 +115,8 @@ export function BusinessInfoSubSteps({
   error = null,
 }: BusinessInfoSubStepsProps) {
   const [currentSubStep, setCurrentSubStep] = useState(0);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [isEditing, setIsEditing] = useState(() => !Boolean(scrapedConfig));
 
   // Initialize form data with logic to handle scraped content
   const initializeFormData = () => {
@@ -181,16 +183,12 @@ export function BusinessInfoSubSteps({
   // Effect to update form if scrapedConfig loads later (though typically it should be passed initially)
   useEffect(() => {
     if (scrapedConfig) {
-      setFormData((prev) => {
-        // Only update if fields are empty to avoid overwriting user edits
-        // Or if we specifically want to overwrite.
-        // For now, let's just respect the initial load.
-        // But if the component mounts with null scrapedConfig and then it arrives, we should update.
-        if (!prev.businessName && scrapedConfig.business_name) {
-          return initializeFormData();
-        }
-        return prev;
-      });
+      // If scraped config arrives after mount and the user hasn't interacted yet,
+      // adopt it (prefill) and default to read-only until they click Edit.
+      if (!hasInteracted) {
+        setFormData(initializeFormData());
+        setIsEditing(false);
+      }
     }
   }, [scrapedConfig]); // Minimal dependency to avoid reset loops
 
@@ -206,6 +204,7 @@ export function BusinessInfoSubSteps({
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    setHasInteracted(true);
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear validation error for this field
@@ -219,7 +218,16 @@ export function BusinessInfoSubSteps({
   };
 
   const handleSelectChange = (name: string, value: string) => {
+    setHasInteracted(true);
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
   const validateCurrentStep = (): boolean => {
@@ -270,6 +278,9 @@ export function BusinessInfoSubSteps({
 
   const handleNext = async () => {
     if (!validateCurrentStep()) {
+      // If we're in read-only mode and validation fails, force edit mode
+      // so the user can fix missing/invalid fields.
+      if (!isEditing) setIsEditing(true);
       return;
     }
 
@@ -314,10 +325,27 @@ export function BusinessInfoSubSteps({
             </CardDescription>
           </div>
           <div className="flex flex-col gap-1">
-            <CardTitle className="text-xl">Welcome to Zevaux</CardTitle>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-xl">Welcome to Zevaux</CardTitle>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                disabled={loading || isEditing}
+              >
+                Edit
+              </Button>
+            </div>
             <CardDescription className="text-sm">
               Let's get your AI receptionist up and running
             </CardDescription>
+            {!isEditing && scrapedConfig && (
+              <CardDescription className="text-xs">
+                We pre-filled these fields from your website. Click Edit to
+                change anything.
+              </CardDescription>
+            )}
           </div>
           {/* </div> */}
         </CardHeader>
@@ -344,7 +372,7 @@ export function BusinessInfoSubSteps({
                       value={formData.businessName}
                       onChange={handleInputChange}
                       placeholder="e.g., John's Dental Practice"
-                      disabled={loading}
+                      disabled={loading || !isEditing}
                     />
                   </Field>
                   {validationErrors.businessName && (
@@ -362,7 +390,7 @@ export function BusinessInfoSubSteps({
                       onValueChange={(value) =>
                         handleSelectChange("industry", value)
                       }
-                      disabled={loading}
+                      disabled={loading || !isEditing}
                     >
                       <SelectTrigger id="industry">
                         <SelectValue placeholder="Select industry" />
@@ -391,7 +419,7 @@ export function BusinessInfoSubSteps({
                         value={formData.industryOther || ""}
                         onChange={handleInputChange}
                         placeholder="Specify your industry"
-                        disabled={loading}
+                        disabled={loading || !isEditing}
                         className="mt-1"
                       />
                       {validationErrors.industryOther && (
@@ -416,7 +444,7 @@ export function BusinessInfoSubSteps({
                     onChange={handleInputChange}
                     placeholder="Brief description of your business..."
                     rows={3}
-                    disabled={loading}
+                    disabled={loading || !isEditing}
                   />
                 </Field>
                 {validationErrors.businessDescription && (
@@ -442,7 +470,7 @@ export function BusinessInfoSubSteps({
                     value={formData.agentName}
                     onChange={handleInputChange}
                     placeholder="e.g., Sarah, Alex"
-                    disabled={loading}
+                    disabled={loading || !isEditing}
                   />
                 </Field>
                 {validationErrors.agentName && (
@@ -468,7 +496,7 @@ export function BusinessInfoSubSteps({
                       formData.agentName || "Sarah"
                     }. How can I help you?`}
                     rows={3}
-                    disabled={loading}
+                    disabled={loading || !isEditing}
                   />
                 </Field>
                 {validationErrors.personalizedGreeting && (
@@ -505,12 +533,14 @@ export function BusinessInfoSubSteps({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
+                              setHasInteracted(true);
                               setFormData((prev) => ({
                                 ...prev,
                                 faqs: prev.faqs.filter((f) => f.id !== faq.id),
                               }));
                             }}
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            disabled={loading || !isEditing}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -523,6 +553,7 @@ export function BusinessInfoSubSteps({
                           <Input
                             value={faq.question}
                             onChange={(e) => {
+                              setHasInteracted(true);
                               const newFaqs = [...formData.faqs];
                               newFaqs[index] = {
                                 ...faq,
@@ -534,7 +565,7 @@ export function BusinessInfoSubSteps({
                               }));
                             }}
                             placeholder="e.g., What are your opening hours?"
-                            disabled={loading}
+                            disabled={loading || !isEditing}
                           />
                           {validationErrors[`faq_${index}_question`] && (
                             <p className="text-sm text-red-600 mt-1">
@@ -548,6 +579,7 @@ export function BusinessInfoSubSteps({
                           <Textarea
                             value={faq.answer}
                             onChange={(e) => {
+                              setHasInteracted(true);
                               const newFaqs = [...formData.faqs];
                               newFaqs[index] = {
                                 ...faq,
@@ -560,7 +592,7 @@ export function BusinessInfoSubSteps({
                             }}
                             placeholder="e.g., We are open Monday to Friday from 9am to 5pm."
                             rows={2}
-                            disabled={loading}
+                            disabled={loading || !isEditing}
                           />
                           {validationErrors[`faq_${index}_answer`] && (
                             <p className="text-sm text-red-600 mt-1">
@@ -578,6 +610,7 @@ export function BusinessInfoSubSteps({
                 type="button"
                 variant="outline"
                 onClick={() => {
+                  setHasInteracted(true);
                   setFormData((prev) => ({
                     ...prev,
                     faqs: [
@@ -591,7 +624,7 @@ export function BusinessInfoSubSteps({
                   }));
                 }}
                 className="w-full"
-                disabled={loading}
+                disabled={loading || !isEditing}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add FAQ

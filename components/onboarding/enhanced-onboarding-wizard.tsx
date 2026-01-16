@@ -52,6 +52,63 @@ export function EnhancedOnboardingWizard({
     error: null as string | null,
   });
 
+  const parseBusinessConfig = (raw: unknown) => {
+    if (raw == null) return null;
+    if (typeof raw === "object") return raw;
+    if (typeof raw !== "string") return null;
+
+    const tryParse = (value: string) => {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
+    };
+
+    let current: unknown = raw;
+
+    // Handle config values that are stored as JSON strings (sometimes double-encoded).
+    for (let i = 0; i < 3 && typeof current === "string"; i++) {
+      const parsed = tryParse(current);
+      if (parsed == null) break;
+      current = parsed;
+    }
+
+    return typeof current === "object" ? current : null;
+  };
+
+  const fetchLatestBusinessConfig = async (businessId: string) => {
+    const supabase = createClient();
+
+    const fetchFrom = async (table: string) => {
+      const { data, error } = await supabase
+        .from(table)
+        .select("config, updated_at")
+        .eq("business_id", businessId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      return { data, error };
+    };
+
+    const primary = await fetchFrom("business_configs");
+    const primaryConfig = primary.data?.config;
+
+    if (primaryConfig) {
+      setBusinessConfig(parseBusinessConfig(primaryConfig));
+      return;
+    }
+
+    // Fallback for older DBs / different table naming.
+    const fallback = await fetchFrom("business_config");
+    const fallbackConfig = fallback.data?.config;
+
+    if (fallbackConfig) {
+      setBusinessConfig(parseBusinessConfig(fallbackConfig));
+    }
+  };
+
   // Fetch onboarding progress on mount to determine starting step
   useEffect(() => {
     const fetchProgress = async () => {
@@ -144,16 +201,8 @@ export function EnhancedOnboardingWizard({
           }
         }
 
-        // Fetch business config
-        const { data: configData } = await supabase
-          .from("business_configs")
-          .select("config")
-          .eq("business_id", business.id)
-          .single();
-
-        if (configData?.config) {
-          setBusinessConfig(configData.config);
-        }
+        // Fetch latest business config (scraped website data)
+        await fetchLatestBusinessConfig(business.id);
       } catch (error) {
         console.error("Error fetching onboarding progress:", error);
         // Fallback to checking business.website
@@ -321,16 +370,8 @@ export function EnhancedOnboardingWizard({
       if (updatedBusiness) {
         setBusiness(updatedBusiness);
 
-        // Also fetch updated config
-        const { data: configData } = await supabase
-          .from("business_configs")
-          .select("config")
-          .eq("business_id", business.id)
-          .single();
-
-        if (configData?.config) {
-          setBusinessConfig(configData.config);
-        }
+        // Also fetch updated config (webhook may have just written it)
+        await fetchLatestBusinessConfig(business.id);
 
         toast({
           title: "Analysis Complete",
