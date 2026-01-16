@@ -195,7 +195,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function NavMain({
   items,
@@ -225,6 +225,24 @@ export function NavMain({
       })
       .map((item) => item.title);
   });
+
+  // Ensure receptionist dropdown is open when on any receptionist page
+  useEffect(() => {
+    const receptionistItem = items.find((item) => item.title === "Receptionist");
+    if (receptionistItem?.items) {
+      const isOnReceptionistPage = receptionistItem.items.some(
+        (child) => pathname === child.url
+      );
+      if (isOnReceptionistPage) {
+        setOpenItems((prev) => {
+          if (!prev.includes("Receptionist")) {
+            return [...prev, "Receptionist"];
+          }
+          return prev;
+        });
+      }
+    }
+  }, [pathname, items]);
 
   const toggleItem = (title: string) => {
     setOpenItems((prev) =>
@@ -274,7 +292,7 @@ export function NavMain({
                 onOpenChange={() => toggleItem(item.title)}
                 className="group/collapsible"
               >
-                {/* Parent Item */}
+                {/* Parent Item - Only toggles dropdown, no navigation */}
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     isActive={isActiveParent}
@@ -284,18 +302,15 @@ export function NavMain({
                         ? "bg-primary text-primary-foreground font-medium"
                         : "hover:bg-accent hover:text-accent-foreground"
                     )}
-                    onClick={() => {
-                      if (item.url && item.url !== "#") {
-                        router.push(item.url);
-                      }
-                    }}
                   >
                     <div className="flex items-center gap-3 w-full">
                       {Icon && <Icon className="h-4 w-4 shrink-0" />}
                       <span className="truncate flex-1 text-left">
                         {item.title}
                       </span>
-                      <ChevronRight className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      {hasChildren && (
+                        <ChevronRight className="h-3 w-3 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      )}
                     </div>
                   </SidebarMenuButton>
                 </CollapsibleTrigger>

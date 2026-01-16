@@ -185,12 +185,14 @@ export default function WebsiteForm() {
       if (!result.success) {
         throw new Error(result.error);
       }
+      console.log("🚀 ~ addWebsites ~ result:", result);
 
       // Trigger webhook
       if (result.data) {
         await triggerKnowledgeWebsiteWebhook(
           result.data.business_id,
-          newWebsite.url
+          newWebsite.url,
+          result.data.id
         );
       }
 

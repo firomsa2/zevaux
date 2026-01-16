@@ -24,6 +24,7 @@ import {
   Package,
 } from "lucide-react";
 import Link from "next/link";
+import { ReceptionistProgressWrapper } from "@/components/onboarding/receptionist-progress-wrapper";
 
 export default function ReceptionistOverview() {
   const [business, setBusiness] = useState<any>(null);
@@ -163,6 +164,9 @@ export default function ReceptionistOverview() {
           </Link>
         </Button>
       </div>
+
+      {/* Receptionist Progress Card */}
+      <ReceptionistProgressWrapper />
 
       {/* Setup Progress */}
       <Card>

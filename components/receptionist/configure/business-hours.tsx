@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select";
 
 import { triggerPromptWebhook } from "@/utils/webhooks";
+import { ReceptionistProgressWrapper } from "@/components/onboarding/receptionist-progress-wrapper";
+import { triggerOnboardingRefresh } from "@/utils/onboarding-refresh";
 
 const DAYS = [
   { id: "monday", label: "Monday" },
@@ -287,6 +289,9 @@ export default function BusinessHoursForm() {
         description: "Business hours saved successfully",
         variant: "default",
       });
+
+      // Trigger onboarding progress refresh
+      triggerOnboardingRefresh();
     } catch (err: any) {
       setError(err.message);
       toast({
@@ -309,6 +314,7 @@ export default function BusinessHoursForm() {
 
   return (
     <div className="space-y-6">
+      <ReceptionistProgressWrapper />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Business Hours</h1>
         <p className="text-muted-foreground">

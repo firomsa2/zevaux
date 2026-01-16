@@ -46,7 +46,8 @@ export async function triggerKnowledgeDocumentWebhook(
 
 export async function triggerKnowledgeWebsiteWebhook(
   businessId: string,
-  sourceUrl: string
+  sourceUrl: string,
+  documentId: string
 ) {
   try {
     const response = await fetch("/api/webhook/knowledge/website", {
@@ -57,6 +58,7 @@ export async function triggerKnowledgeWebsiteWebhook(
       body: JSON.stringify({
         business_id: businessId,
         source_url: sourceUrl,
+        document_id: documentId,
       }),
     });
 

@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { business_id, source_url } = body;
+    const { business_id, source_url, document_id } = body;
 
-    if (!business_id || !source_url) {
+    if (!business_id || !source_url || !document_id) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ business_id, source_url }),
+      body: JSON.stringify({ business_id, source_url, document_id }),
     }).catch((err) => console.error("Error calling website webhook:", err));
 
     return NextResponse.json({ success: true });

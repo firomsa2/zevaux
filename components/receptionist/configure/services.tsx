@@ -6,11 +6,28 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Save, AlertCircle, Plus, Trash2, Clock, DollarSign, Package } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  AlertCircle,
+  Plus,
+  Trash2,
+  Clock,
+  DollarSign,
+  Package,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { ReceptionistProgressWrapper } from "@/components/onboarding/receptionist-progress-wrapper";
+import { triggerOnboardingRefresh } from "@/utils/onboarding-refresh";
 
 interface Service {
   id: string;
@@ -86,8 +103,10 @@ export default function ServicesForm() {
   const fetchBusinessData = async () => {
     try {
       setLoading(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
       const { data: userData } = await supabase
@@ -107,17 +126,19 @@ export default function ServicesForm() {
 
       if (configRes?.config?.services) {
         // Transform stored services to match our format
-        const storedServices = configRes.config.services.map((service: any, index: number) => ({
-          id: (index + 1).toString(),
-          name: service.name || "",
-          description: service.description || "",
-          durationMinutes: service.durationMinutes || 30,
-          price: service.price,
-          category: service.category || "",
-          requiresAppointment: service.requiresAppointment !== false,
-          maxParticipants: service.maxParticipants,
-          notes: service.notes,
-        }));
+        const storedServices = configRes.config.services.map(
+          (service: any, index: number) => ({
+            id: (index + 1).toString(),
+            name: service.name || "",
+            description: service.description || "",
+            durationMinutes: service.durationMinutes || 30,
+            price: service.price,
+            category: service.category || "",
+            requiresAppointment: service.requiresAppointment !== false,
+            maxParticipants: service.maxParticipants,
+            notes: service.notes,
+          })
+        );
         setServices(storedServices);
       }
     } catch (err: any) {
@@ -150,8 +171,8 @@ export default function ServicesForm() {
       notes: newService.notes,
     };
 
-    setServices(prev => [...prev, newServiceData]);
-    
+    setServices((prev) => [...prev, newServiceData]);
+
     // Reset form
     setNewService({
       name: "",
@@ -169,8 +190,8 @@ export default function ServicesForm() {
   };
 
   const updateService = (id: string, field: keyof Service, value: any) => {
-    setServices(prev =>
-      prev.map(service =>
+    setServices((prev) =>
+      prev.map((service) =>
         service.id === id ? { ...service, [field]: value } : service
       )
     );
@@ -186,7 +207,7 @@ export default function ServicesForm() {
       return;
     }
 
-    setServices(prev => prev.filter(service => service.id !== id));
+    setServices((prev) => prev.filter((service) => service.id !== id));
     toast({
       title: "Success",
       description: "Service removed",
@@ -210,7 +231,7 @@ export default function ServicesForm() {
         .single();
 
       // Format services for storage
-      const servicesForStorage = services.map(service => ({
+      const servicesForStorage = services.map((service) => ({
         name: service.name,
         description: service.description,
         durationMinutes: service.durationMinutes,
@@ -234,19 +255,19 @@ export default function ServicesForm() {
       const { error: configError } = await supabase
         .from("business_configs")
         .upsert(configData, {
-          onConflict: 'business_id'
+          onConflict: "business_id",
         });
 
       if (configError) throw configError;
 
       // Update prompt
       const { error: promptError } = await supabase.rpc(
-        'update_business_prompt_trigger',
+        "update_business_prompt_trigger",
         { p_business_id: businessId }
       );
 
       if (promptError) {
-        console.warn('Prompt update failed:', promptError);
+        console.warn("Prompt update failed:", promptError);
       }
 
       toast({
@@ -255,6 +276,8 @@ export default function ServicesForm() {
         variant: "default",
       });
 
+      // Trigger onboarding progress refresh
+      triggerOnboardingRefresh();
     } catch (err: any) {
       setError(err.message);
       toast({
@@ -277,6 +300,7 @@ export default function ServicesForm() {
 
   return (
     <div className="space-y-6">
+      <ReceptionistProgressWrapper />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Services</h1>
         <p className="text-muted-foreground">
@@ -310,7 +334,9 @@ export default function ServicesForm() {
                 <Input
                   id="serviceName"
                   value={newService.name}
-                  onChange={(e) => setNewService(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setNewService((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   placeholder="e.g., Haircut, Consultation, Repair"
                 />
               </div>
@@ -319,7 +345,12 @@ export default function ServicesForm() {
                 <select
                   id="serviceCategory"
                   value={newService.category}
-                  onChange={(e) => setNewService(prev => ({ ...prev, category: e.target.value }))}
+                  onChange={(e) =>
+                    setNewService((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
+                  }
                   className="w-full px-3 py-2 border rounded-md"
                 >
                   <option value="">Select a category</option>
@@ -337,7 +368,12 @@ export default function ServicesForm() {
               <Textarea
                 id="serviceDescription"
                 value={newService.description}
-                onChange={(e) => setNewService(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setNewService((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 placeholder="Describe what this service includes..."
                 className="min-h-20"
               />
@@ -349,7 +385,12 @@ export default function ServicesForm() {
                 <select
                   id="serviceDuration"
                   value={newService.durationMinutes}
-                  onChange={(e) => setNewService(prev => ({ ...prev, durationMinutes: parseInt(e.target.value) }))}
+                  onChange={(e) =>
+                    setNewService((prev) => ({
+                      ...prev,
+                      durationMinutes: parseInt(e.target.value),
+                    }))
+                  }
                   className="w-full px-3 py-2 border rounded-md"
                 >
                   {DURATION_OPTIONS.map((option) => (
@@ -367,7 +408,14 @@ export default function ServicesForm() {
                   min="0"
                   step="0.01"
                   value={newService.price || ""}
-                  onChange={(e) => setNewService(prev => ({ ...prev, price: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                  onChange={(e) =>
+                    setNewService((prev) => ({
+                      ...prev,
+                      price: e.target.value
+                        ? parseFloat(e.target.value)
+                        : undefined,
+                    }))
+                  }
                   placeholder="Optional"
                 />
               </div>
@@ -378,7 +426,14 @@ export default function ServicesForm() {
                   type="number"
                   min="1"
                   value={newService.maxParticipants || ""}
-                  onChange={(e) => setNewService(prev => ({ ...prev, maxParticipants: e.target.value ? parseInt(e.target.value) : undefined }))}
+                  onChange={(e) =>
+                    setNewService((prev) => ({
+                      ...prev,
+                      maxParticipants: e.target.value
+                        ? parseInt(e.target.value)
+                        : undefined,
+                    }))
+                  }
                   placeholder="Optional"
                 />
               </div>
@@ -393,7 +448,12 @@ export default function ServicesForm() {
               </div>
               <Switch
                 checked={newService.requiresAppointment !== false}
-                onCheckedChange={(value) => setNewService(prev => ({ ...prev, requiresAppointment: value }))}
+                onCheckedChange={(value) =>
+                  setNewService((prev) => ({
+                    ...prev,
+                    requiresAppointment: value,
+                  }))
+                }
               />
             </div>
 
@@ -433,7 +493,9 @@ export default function ServicesForm() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-medium text-lg">{service.name}</h4>
+                          <h4 className="font-medium text-lg">
+                            {service.name}
+                          </h4>
                           {service.category && (
                             <span className="px-2 py-1 text-xs bg-secondary rounded-full">
                               {service.category}
@@ -468,8 +530,14 @@ export default function ServicesForm() {
                         </div>
                       )}
                       <div className="text-sm">
-                        <span className="text-muted-foreground">Appointment: </span>
-                        <span>{service.requiresAppointment ? "Required" : "Not required"}</span>
+                        <span className="text-muted-foreground">
+                          Appointment:{" "}
+                        </span>
+                        <span>
+                          {service.requiresAppointment
+                            ? "Required"
+                            : "Not required"}
+                        </span>
                       </div>
                     </div>
 
@@ -480,22 +548,36 @@ export default function ServicesForm() {
                           <input
                             type="text"
                             value={service.notes || ""}
-                            onChange={(e) => updateService(service.id, 'notes', e.target.value)}
+                            onChange={(e) =>
+                              updateService(service.id, "notes", e.target.value)
+                            }
                             placeholder="Additional notes..."
                             className="w-full px-3 py-1.5 text-sm border rounded"
                           />
-                          <p className="text-xs text-muted-foreground mt-1">Internal notes</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Internal notes
+                          </p>
                         </div>
                         <div>
                           <input
                             type="number"
                             min="1"
                             value={service.maxParticipants || ""}
-                            onChange={(e) => updateService(service.id, 'maxParticipants', e.target.value ? parseInt(e.target.value) : undefined)}
+                            onChange={(e) =>
+                              updateService(
+                                service.id,
+                                "maxParticipants",
+                                e.target.value
+                                  ? parseInt(e.target.value)
+                                  : undefined
+                              )
+                            }
                             placeholder="Max participants"
                             className="w-full px-3 py-1.5 text-sm border rounded"
                           />
-                          <p className="text-xs text-muted-foreground mt-1">For group services</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            For group services
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -517,9 +599,14 @@ export default function ServicesForm() {
         {/* Actions */}
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="text-sm text-muted-foreground">
-            {services.length} service{services.length !== 1 ? 's' : ''} configured
+            {services.length} service{services.length !== 1 ? "s" : ""}{" "}
+            configured
           </div>
-          <Button type="submit" disabled={saving || services.length === 0} size="lg">
+          <Button
+            type="submit"
+            disabled={saving || services.length === 0}
+            size="lg"
+          >
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -24,6 +24,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Save, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { triggerOnboardingRefresh } from "@/utils/onboarding-refresh";
 
 const INDUSTRIES = [
   "Hair Salon",
@@ -82,6 +83,7 @@ const TONES = [
 ];
 
 import { triggerPromptWebhook } from "@/utils/webhooks";
+import { ReceptionistProgressWrapper } from "@/components/onboarding/receptionist-progress-wrapper";
 
 export default function BusinessConfigForm() {
   const [loading, setLoading] = useState(true);
@@ -362,6 +364,9 @@ export default function BusinessConfigForm() {
         variant: "default",
       });
 
+      // Trigger onboarding progress refresh
+      triggerOnboardingRefresh();
+
       // Refresh data
       setTimeout(() => {
         fetchBusinessData();
@@ -388,6 +393,7 @@ export default function BusinessConfigForm() {
 
   return (
     <div className="space-y-6">
+      <ReceptionistProgressWrapper />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
           Business Configuration

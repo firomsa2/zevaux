@@ -1043,6 +1043,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import VoiceSelection from "./voice-selection";
+import { ReceptionistProgressWrapper } from "@/components/onboarding/receptionist-progress-wrapper";
+import { triggerOnboardingRefresh } from "@/utils/onboarding-refresh";
 
 const LANGUAGES1 = [
   { code: "en", name: "English" },
@@ -1200,6 +1202,9 @@ export default function VoiceSettingsForm() {
         description: "Settings saved successfully",
         variant: "default",
       });
+
+      // Trigger onboarding progress refresh
+      triggerOnboardingRefresh();
     } catch (err: any) {
       setError(err.message);
       toast({
@@ -1222,6 +1227,7 @@ export default function VoiceSettingsForm() {
 
   return (
     <div className="space-y-6">
+      <ReceptionistProgressWrapper />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Voice & Language</h1>
         <p className="text-muted-foreground">

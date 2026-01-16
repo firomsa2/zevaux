@@ -9,7 +9,7 @@ export default async function SetupPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   const { data: receptionistConfig } = await supabase

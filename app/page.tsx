@@ -1396,34 +1396,516 @@
 //   );
 // }
 
-import ProfessionalNav from "@/components/professional-nav";
-import HeroSection from "@/sections/hero-section";
-import ProblemStatement from "@/sections/problem-statement";
-import FeaturesShowcase from "@/sections/features-showcase";
-import IntegrationsSection from "@/sections/integrations-section";
-import PricingSection from "@/sections/pricing-section";
-import FAQSection from "@/sections/faq-section";
-import FinalCTASection from "@/sections/final-cta-section";
-import ProfessionalFooter from "@/components/professional-footer";
-import SimpleSetup from "@/sections/simple-setup";
-import FullFeatureSet from "@/sections/full-feature-set";
-import CustomersSection from "@/sections/customers-section";
+// import ProfessionalNav from "@/components/professional-nav";
+// import HeroSection from "@/sections/hero-section";
+// import ProblemStatement from "@/sections/problem-statement";
+// import FeaturesShowcase from "@/sections/features-showcase";
+// import IntegrationsSection from "@/sections/integrations-section";
+// import PricingSection from "@/sections/pricing-section";
+// import FAQSection from "@/sections/faq-section";
+// import FinalCTASection from "@/sections/final-cta-section";
+// import ProfessionalFooter from "@/components/professional-footer";
+// import SimpleSetup from "@/sections/simple-setup";
+// import FullFeatureSet from "@/sections/full-feature-set";
+// import CustomersSection from "@/sections/customers-section";
+
+// export default function Home() {
+//   return (
+//     <main className="min-h-screen">
+//       <ProfessionalNav />
+//       <HeroSection />
+//       {/* <ProblemStatement /> */}
+//       <FullFeatureSet />
+//       {/* <FeaturesShowcase /> */}
+//       {/* <IntegrationsSection /> */}
+//       <CustomersSection />
+//       <PricingSection />
+//       <SimpleSetup />
+//       <FAQSection />
+//       {/* <FinalCTASection /> */}
+//       <ProfessionalFooter />
+//     </main>
+//   );
+// }
+
+// import Link from "next/link";
+// import { Button } from "@/components/ui/button";
+// import {
+//   CheckCircle2,
+//   Phone,
+//   Calendar,
+//   BarChart3,
+//   Zap,
+//   Users,
+//   Play,
+//   Star,
+//   ShieldCheck,
+//   LayoutDashboard,
+//   Clock,
+//   ArrowRight,
+//   Lock,
+//   Sparkles,
+// } from "lucide-react";
+// import { createClient } from "@/utils/supabase/server";
+// import Logout from "@/components/Logout";
+// import { ModeToggle } from "@/components/mode-toggle";
+// import { Fragment } from "react";
+
+// export default async function Home() {
+//   const supabase = await createClient();
+//   const {
+//     data: { user },
+//   } = await supabase.auth.getUser();
+
+//   return (
+//     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+//       {/* Navigation */}
+//       <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl">
+//         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="flex items-center justify-between h-16 lg:h-20">
+//             <Link href="/" className="flex items-center gap-3">
+//               <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center">
+//                 <Phone className="w-5 h-5 text-white" />
+//               </div>
+//               <div className="text-xl sm:text-2xl font-bold text-white">
+//                 Zevaux
+//               </div>
+//             </Link>
+
+//             {/* Desktop Navigation */}
+//             <div className="hidden lg:flex items-center gap-10">
+//               <div className="flex items-center gap-8">
+//                 <Link
+//                   href="#features"
+//                   className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+//                 >
+//                   Features
+//                 </Link>
+//                 <Link
+//                   href="#benefits"
+//                   className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+//                 >
+//                   Benefits
+//                 </Link>
+//                 <Link
+//                   href="#pricing"
+//                   className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
+//                 >
+//                   Pricing
+//                 </Link>
+//               </div>
+//               <div className="flex items-center gap-4">
+//                 {!user ? (
+//                   <Fragment>
+//                     <ModeToggle />
+//                     <Button
+//                       variant="ghost"
+//                       size="sm"
+//                       asChild
+//                       className="text-slate-300 hover:text-white"
+//                     >
+//                       <Link href="/auth/login">Sign In</Link>
+//                     </Button>
+//                     <Button
+//                       className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+//                       asChild
+//                     >
+//                       <Link href="/signup">
+//                         Get Started <ArrowRight className="w-4 h-4" />
+//                       </Link>
+//                     </Button>
+//                   </Fragment>
+//                 ) : (
+//                   <Fragment>
+//                     <Link
+//                       href="/dashboard"
+//                       className="text-sm font-medium text-slate-300 hover:text-white flex items-center gap-2"
+//                     >
+//                       <LayoutDashboard className="w-4 h-4" />
+//                       Dashboard
+//                     </Link>
+//                     <ModeToggle />
+//                     <Logout />
+//                   </Fragment>
+//                 )}
+//               </div>
+//             </div>
+
+//             {/* Mobile Navigation */}
+//             <div className="lg:hidden flex items-center gap-3">
+//               <ModeToggle />
+//               <Button
+//                 size="sm"
+//                 asChild
+//                 className="bg-blue-600 hover:bg-blue-700 text-white"
+//               >
+//                 <Link href="/auth/login">Get Started</Link>
+//               </Button>
+//             </div>
+//           </div>
+//         </div>
+//       </nav>
+
+//       {/* Hero Section */}
+//       <section className="relative overflow-hidden">
+//         <div className="absolute inset-0 opacity-30">
+//           <div
+//             className="absolute inset-0"
+//             style={{
+//               backgroundImage: `radial-gradient(circle at 20% 50%, rgb(59, 130, 246, 0.1) 0%, transparent 50%),
+//                                radial-gradient(circle at 80% 80%, rgb(139, 92, 246, 0.1) 0%, transparent 50%)`,
+//             }}
+//           ></div>
+//         </div>
+
+//         <div className="container relative mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+//           <div className="max-w-3xl mx-auto text-center space-y-8">
+//             <div className="inline-flex items-center gap-2 bg-blue-900/30 backdrop-blur-sm border border-blue-800/50 px-4 py-2 rounded-full">
+//               <Sparkles className="w-4 h-4 text-blue-400" />
+//               <span className="text-sm font-semibold text-blue-300">
+//                 AI-Powered Phone System
+//               </span>
+//             </div>
+
+//             <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-tight">
+//               Your AI Receptionist Works
+//               <span className="block bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+//                 24/7 for You
+//               </span>
+//             </h1>
+
+//             <p className="text-xl text-slate-300 max-w-2xl mx-auto">
+//               Never miss a customer call again. Your AI receptionist answers,
+//               schedules appointments, qualifies leads, and handles customer
+//               inquiries while you focus on growing your business.
+//             </p>
+
+//             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+//               <Button
+//                 size="lg"
+//                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-lg text-lg font-semibold gap-2 group"
+//                 asChild
+//               >
+//                 <Link href="/auth/login">
+//                   Get 500 Free Minutes{" "}
+//                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+//                 </Link>
+//               </Button>
+//               <Button
+//                 variant="outline"
+//                 size="lg"
+//                 className="border-slate-700 text-white hover:bg-slate-800 px-8 py-6 rounded-lg text-lg font-semibold gap-2 bg-transparent"
+//               >
+//                 <Play className="w-5 h-5" />
+//                 Watch Demo
+//               </Button>
+//             </div>
+
+//             {/* Trust Indicators */}
+//             <div className="flex flex-wrap justify-center items-center gap-8 pt-8 text-slate-400 text-sm">
+//               <div className="flex items-center gap-2">
+//                 <div className="flex gap-1">
+//                   {[...Array(5)].map((_, i) => (
+//                     <Star
+//                       key={i}
+//                       className="w-4 h-4 fill-yellow-400 text-yellow-400"
+//                     />
+//                   ))}
+//                 </div>
+//                 <span>4.9/5 Rating</span>
+//               </div>
+//               <div className="flex items-center gap-2">
+//                 <ShieldCheck className="w-4 h-4" />
+//                 <span>Enterprise Security</span>
+//               </div>
+//               <div className="flex items-center gap-2">
+//                 <Clock className="w-4 h-4" />
+//                 <span>3-Minute Setup</span>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </section>
+
+//       {/* Features Section */}
+//       <section
+//         id="features"
+//         className="border-t border-slate-800 py-20 md:py-32"
+//       >
+//         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="max-w-2xl mx-auto text-center mb-16">
+//             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+//               Everything You Need
+//             </h2>
+//             <p className="text-xl text-slate-300">
+//               Complete call management solution built for modern businesses
+//             </p>
+//           </div>
+
+//           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+//             {[
+//               {
+//                 icon: Phone,
+//                 title: "Intelligent Call Handling",
+//                 description:
+//                   "Answers calls, understands context, and routes to the right department or person.",
+//               },
+//               {
+//                 icon: Calendar,
+//                 title: "Smart Scheduling",
+//                 description:
+//                   "Books and manages appointments directly into your calendar without human intervention.",
+//               },
+//               {
+//                 icon: BarChart3,
+//                 title: "Real-Time Analytics",
+//                 description:
+//                   "Track call metrics, transcripts, and performance insights in your dashboard.",
+//               },
+//               {
+//                 icon: Zap,
+//                 title: "Instant Integration",
+//                 description:
+//                   "Connect with your existing phone system, CRM, and business tools seamlessly.",
+//               },
+//               {
+//                 icon: Users,
+//                 title: "Team Collaboration",
+//                 description:
+//                   "Multiple team members can manage and monitor calls from one platform.",
+//               },
+//               {
+//                 icon: Lock,
+//                 title: "Enterprise Security",
+//                 description:
+//                   "HIPAA-compliant, encrypted, and SOC 2 Type II certified infrastructure.",
+//               },
+//             ].map((feature, i) => {
+//               const Icon = feature.icon;
+//               return (
+//                 <div
+//                   key={i}
+//                   className="group relative bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-blue-600/50 rounded-xl p-6 transition-all duration-300"
+//                 >
+//                   <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity" />
+//                   <div className="relative space-y-4">
+//                     <div className="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center group-hover:bg-blue-600/30 transition-colors">
+//                       <Icon className="w-6 h-6 text-blue-400" />
+//                     </div>
+//                     <h3 className="text-lg font-semibold text-white">
+//                       {feature.title}
+//                     </h3>
+//                     <p className="text-slate-400">{feature.description}</p>
+//                   </div>
+//                 </div>
+//               );
+//             })}
+//           </div>
+//         </div>
+//       </section>
+
+//       {/* Benefits Section */}
+//       <section
+//         id="benefits"
+//         className="border-t border-slate-800 py-20 md:py-32 bg-slate-900/50"
+//       >
+//         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="grid md:grid-cols-2 gap-12 items-center">
+//             <div className="space-y-8">
+//               <h2 className="text-4xl md:text-5xl font-bold text-white">
+//                 Proven Results
+//               </h2>
+//               <div className="space-y-6">
+//                 {[
+//                   { metric: "80%", description: "Reduction in missed calls" },
+//                   { metric: "5 hrs/week", description: "Saved per employee" },
+//                   {
+//                     metric: "40% increase",
+//                     description: "In appointment bookings",
+//                   },
+//                   {
+//                     metric: "$2,500/month",
+//                     description: "Average savings per business",
+//                   },
+//                 ].map((item, i) => (
+//                   <div key={i} className="flex gap-4">
+//                     <div className="flex-shrink-0">
+//                       <CheckCircle2 className="w-6 h-6 text-blue-400 mt-1" />
+//                     </div>
+//                     <div>
+//                       <p className="text-2xl font-bold text-white">
+//                         {item.metric}
+//                       </p>
+//                       <p className="text-slate-400">{item.description}</p>
+//                     </div>
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+
+//             <div className="relative h-[400px] bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 border border-slate-700">
+//               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-2xl" />
+//               <div className="relative h-full flex flex-col justify-center items-center text-center">
+//                 <BarChart3 className="w-20 h-20 text-blue-400 mb-6 opacity-50" />
+//                 <p className="text-slate-300 mb-4">
+//                   See real performance metrics from your AI receptionist
+//                 </p>
+//                 <Button
+//                   variant="outline"
+//                   className="border-slate-600 text-white hover:bg-slate-700 bg-transparent"
+//                   asChild
+//                 >
+//                   <Link href="/auth/login">View Sample Dashboard</Link>
+//                 </Button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </section>
+
+//       {/* CTA Section */}
+//       <section className="border-t border-slate-800 py-20 md:py-32">
+//         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="max-w-2xl mx-auto text-center space-y-8 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 rounded-2xl p-12">
+//             <h2 className="text-4xl md:text-5xl font-bold text-white">
+//               Ready to Transform Your Customer Service?
+//             </h2>
+//             <p className="text-xl text-slate-300">
+//               Get 500 free minutes to test your AI receptionist. No credit card
+//               required.
+//             </p>
+//             <Button
+//               size="lg"
+//               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-lg text-lg font-semibold gap-2 group"
+//               asChild
+//             >
+//               <Link href="/auth/login">
+//                 Start Your Free Trial{" "}
+//                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+//               </Link>
+//             </Button>
+//           </div>
+//         </div>
+//       </section>
+
+//       {/* Footer */}
+//       <footer className="border-t border-slate-800 bg-slate-950/50 py-12">
+//         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+//           <div className="grid md:grid-cols-4 gap-8 mb-8">
+//             <div>
+//               <h3 className="text-white font-semibold mb-4">Product</h3>
+//               <ul className="space-y-2 text-slate-400 text-sm">
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     Features
+//                   </Link>
+//                 </li>
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     Pricing
+//                   </Link>
+//                 </li>
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     Demo
+//                   </Link>
+//                 </li>
+//               </ul>
+//             </div>
+//             <div>
+//               <h3 className="text-white font-semibold mb-4">Company</h3>
+//               <ul className="space-y-2 text-slate-400 text-sm">
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     About
+//                   </Link>
+//                 </li>
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     Blog
+//                   </Link>
+//                 </li>
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     Contact
+//                   </Link>
+//                 </li>
+//               </ul>
+//             </div>
+//             <div>
+//               <h3 className="text-white font-semibold mb-4">Legal</h3>
+//               <ul className="space-y-2 text-slate-400 text-sm">
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     Privacy
+//                   </Link>
+//                 </li>
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     Terms
+//                   </Link>
+//                 </li>
+//               </ul>
+//             </div>
+//             <div>
+//               <h3 className="text-white font-semibold mb-4">Follow</h3>
+//               <ul className="space-y-2 text-slate-400 text-sm">
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     Twitter
+//                   </Link>
+//                 </li>
+//                 <li>
+//                   <Link href="#" className="hover:text-white transition-colors">
+//                     LinkedIn
+//                   </Link>
+//                 </li>
+//               </ul>
+//             </div>
+//           </div>
+//           <div className="border-t border-slate-800 pt-8 flex items-center justify-between">
+//             <p className="text-slate-400 text-sm">
+//               &copy; 2025 Zevaux. All rights reserved.
+//             </p>
+//             <Link href="/" className="flex items-center gap-2">
+//               <div className="h-6 w-6 rounded-md bg-blue-600 flex items-center justify-center">
+//                 <Phone className="w-4 h-4 text-white" />
+//               </div>
+//               <span className="text-white font-semibold">Zevaux</span>
+//             </Link>
+//           </div>
+//         </div>
+//       </footer>
+//     </main>
+//   );
+// }
+
+import { FAQ } from "@/components/landing-page/faq";
+import { Features } from "@/components/landing-page/features";
+import { FinalCTA } from "@/components/landing-page/final-cta";
+import { Footer } from "@/components/landing-page/footer";
+import { Hero } from "@/components/landing-page/hero";
+import { HowItWorks } from "@/components/landing-page/how-it-works";
+import { MetricsStrip } from "@/components/landing-page/metrics-strip";
+import { Navigation } from "@/components/landing-page/navigation";
+import { Pricing } from "@/components/landing-page/pricing";
+import { TrustBar } from "@/components/landing-page/trust-bar";
+import { UseCases } from "@/components/landing-page/use-cases";
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
-      <ProfessionalNav />
-      <HeroSection />
-      {/* <ProblemStatement /> */}
-      <FullFeatureSet />
-      {/* <FeaturesShowcase /> */}
-      {/* <IntegrationsSection /> */}
-      <CustomersSection />
-      <PricingSection />
-      <SimpleSetup />
-      <FAQSection />
-      {/* <FinalCTASection /> */}
-      <ProfessionalFooter />
+    <main className="min-h-screen bg-background">
+      <Navigation />
+      <Hero />
+      <TrustBar />
+      <Features />
+      <HowItWorks />
+      <UseCases />
+      <MetricsStrip />
+      <Pricing />
+      <FAQ />
+      <FinalCTA />
+      <Footer />
     </main>
   );
 }

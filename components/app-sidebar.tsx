@@ -298,6 +298,7 @@ import {
   Bell,
   Shield,
   Package,
+  Rocket,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -326,14 +327,20 @@ const data = {
   ],
   navMain: [
     {
+      title: "Quick Start Guide",
+      url: "/dashboard/onboarding",
+      icon: Rocket,
+      isActive: false,
+    },
+    {
       title: "Overview",
       url: "/dashboard",
       icon: Home,
-      isActive: true,
+      isActive: true, // Only Overview should be active by default on /dashboard
     },
     {
       title: "Receptionist",
-      url: "/dashboard/receptionist",
+      url: "#", // No navigation, just toggle dropdown
       icon: Bot,
       isActive: false,
       items: [
@@ -347,11 +354,6 @@ const data = {
           url: "/dashboard/receptionist/services",
           icon: Package,
         },
-        // {
-        //   title: "AI Settings",
-        //   url: "/dashboard/receptionist/ai",
-        //   icon: Zap,
-        // },
         {
           title: "Voice & Language",
           url: "/dashboard/receptionist/voice",
@@ -362,11 +364,6 @@ const data = {
           url: "/dashboard/receptionist/hours",
           icon: Clock,
         },
-        // {
-        //   title: "Team Members",
-        //   url: "/dashboard/receptionist/team",
-        //   icon: Users,
-        // },
       ],
     },
     {

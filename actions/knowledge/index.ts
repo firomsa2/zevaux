@@ -196,6 +196,7 @@ export async function addWebsite(websiteData: {
       url: websiteData.url,
       language: websiteData.language,
     });
+    console.log("🚀 ~ addWebsite ~ doc:", doc);
 
     revalidatePath("/dashboard/knowledge");
 
@@ -289,6 +290,8 @@ export async function uploadDocument(formData: FormData) {
       filePath: fileName,
       language: language,
     });
+
+    console.log("🚀 ~ uploadDocument ~ doc:", doc);
 
     revalidatePath("/dashboard/knowledge");
 

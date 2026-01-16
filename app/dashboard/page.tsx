@@ -1,6 +1,7 @@
 import { DashboardContent } from "@/components/dashboard/content";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { getOnboardingProgress } from "@/utils/onboarding";
 
 export default async function Page() {
   const supabase = await createClient();
@@ -8,7 +9,7 @@ export default async function Page() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   // Get user's business_id
@@ -77,5 +78,14 @@ export default async function Page() {
     }
   }
 
-  return <DashboardContent user={user} data={dashboardData} />;
+  // Get onboarding progress
+  const onboardingProgress = await getOnboardingProgress(user.id);
+
+  return (
+    <DashboardContent
+      user={user}
+      data={dashboardData}
+      onboardingProgress={onboardingProgress}
+    />
+  );
 }

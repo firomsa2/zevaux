@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto"; // Import crypto module
+import { markWebsiteTrainingComplete } from "@/utils/onboarding";
 
 export async function handleKnowledgeWebhook(payload: {
   event: string;
@@ -41,6 +42,14 @@ export async function handleKnowledgeWebhook(payload: {
 
       case "chunks_created":
         // Update chunk count
+        const { data: doc } = await (
+          await supabase
+        )
+          .from("knowledge_base_documents")
+          .select("business_id, source_type")
+          .eq("id", data.documentId)
+          .single();
+
         await (
           await supabase
         )
@@ -51,10 +60,23 @@ export async function handleKnowledgeWebhook(payload: {
             updated_at: new Date().toISOString(),
           })
           .eq("id", data.documentId);
+
+        // Mark website training as completed if this is a website document
+        if (doc?.business_id && doc?.source_type === "url") {
+          await markWebsiteTrainingComplete(doc.business_id);
+        }
         break;
 
       case "website_crawled":
         // Update website crawl info
+        const { data: document } = await (
+          await supabase
+        )
+          .from("knowledge_base_documents")
+          .select("business_id")
+          .eq("id", data.documentId)
+          .single();
+
         await (
           await supabase
         )
@@ -66,6 +88,11 @@ export async function handleKnowledgeWebhook(payload: {
             updated_at: new Date().toISOString(),
           })
           .eq("id", data.documentId);
+
+        // Mark website training as completed in onboarding progress
+        if (document?.business_id) {
+          await markWebsiteTrainingComplete(document.business_id);
+        }
         break;
 
       case "faq_processed":
