@@ -34,6 +34,7 @@ export function WebsiteTrainingStep({
   const [url, setUrl] = useState("");
   const [step, setStep] = useState<TrainingStep>("idle");
   const [loading, setLoading] = useState(false);
+  const [continueLoading, setContinueLoading] = useState(false);
   const [trainingProgress, setTrainingProgress] = useState(0);
   const { toast } = useToast();
   const router = useRouter();
@@ -107,6 +108,8 @@ export function WebsiteTrainingStep({
       return;
     }
 
+    setContinueLoading(true);
+
     // Mark website training as completed
     let shouldRedirect = true;
     try {
@@ -122,7 +125,7 @@ export function WebsiteTrainingStep({
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Failed to mark website training complete:", errorData);
-        
+
         // If column doesn't exist, show user-friendly message but continue
         if (
           errorData.error?.includes("website_training_completed") ||
@@ -131,7 +134,8 @@ export function WebsiteTrainingStep({
         ) {
           toast({
             title: "Note",
-            description: "Database migration needed. Progress will be tracked via website document status. You can continue.",
+            description:
+              "Database migration needed. Progress will be tracked via website document status. You can continue.",
             variant: "default",
           });
           // Still allow navigation - we'll check document status as fallback
@@ -139,7 +143,9 @@ export function WebsiteTrainingStep({
         } else {
           toast({
             title: "Warning",
-            description: errorData.error || "Progress may not be saved, but you can continue.",
+            description:
+              errorData.error ||
+              "Progress may not be saved, but you can continue.",
             variant: "default",
           });
           // Still allow navigation
@@ -150,7 +156,8 @@ export function WebsiteTrainingStep({
       console.error("Failed to mark website training complete:", error);
       toast({
         title: "Note",
-        description: "Progress will be tracked via website document status. You can continue.",
+        description:
+          "Progress will be tracked via website document status. You can continue.",
         variant: "default",
       });
       // Still allow navigation - we have fallback tracking
@@ -162,6 +169,8 @@ export function WebsiteTrainingStep({
     if (shouldRedirect) {
       router.push("/dashboard/onboarding");
     }
+
+    setContinueLoading(false);
   };
 
   return (
@@ -403,8 +412,18 @@ export function WebsiteTrainingStep({
                   onClick={handleContinue}
                   className="w-full h-12 text-lg shadow-lg hover:shadow-xl transition-all"
                   size="lg"
+                  disabled={continueLoading}
                 >
-                  Claim Your Agent <ArrowRight className="ml-2 w-5 h-5" />
+                  {continueLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Preparing your agent...
+                    </>
+                  ) : (
+                    <>
+                      Claim Your Agent <ArrowRight className="ml-2 w-5 h-5" />
+                    </>
+                  )}
                 </Button>
                 <Button
                   variant="ghost"
@@ -427,13 +446,13 @@ function CheckItem({ label, active }: { label: string; active: boolean }) {
     <div
       className={cn(
         "flex items-center gap-3 transition-opacity duration-500",
-        active ? "opacity-100" : "opacity-40"
+        active ? "opacity-100" : "opacity-40",
       )}
     >
       <div
         className={cn(
           "w-5 h-5 rounded-full flex items-center justify-center border",
-          active ? "bg-primary border-primary" : "border-slate-300"
+          active ? "bg-primary border-primary" : "border-slate-300",
         )}
       >
         {active && <div className="w-2 h-2 bg-white rounded-full" />}

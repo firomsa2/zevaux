@@ -134,6 +134,8 @@ import {
 import { createClient } from "@/utils/supabase/server";
 import { Bell, HelpCircle } from "lucide-react";
 import { redirect } from "next/navigation";
+import { OnboardingGuard } from "@/components/onboarding/onboarding-guard";
+import { getOnboardingProgress } from "@/utils/onboarding";
 // import { useState } from "react";
 
 export default async function DashboardLayout({
@@ -155,60 +157,74 @@ export default async function DashboardLayout({
     .single();
   // if (me?.role !== "admin") redirect("/dashboard/calls");
 
+  // Check onboarding progress using the same logic as the API
+  // This function checks multiple tables: onboarding_progress, businesses, phone_endpoints, knowledge_base_documents
+  let completedSteps = 0;
+  try {
+    const progress = await getOnboardingProgress(user.id);
+    completedSteps = progress.completedSteps;
+  } catch (error) {
+    console.error("Error fetching onboarding progress:", error);
+    // If there's an error, default to 0 (redirect to onboarding)
+    completedSteps = 0;
+  }
+
   // const [isCelebrationDismissed, setIsCelebrationDismissed] = useState(false)
 
   return (
-    <div className="flex h-screen bg-background">
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b">
-            <div className="flex items-center justify-between px-4 w-full">
-              {/* Left Section */}
-              <div className="flex items-center">
-                <SidebarTrigger className="-ml-1" />
-                <Separator
-                  orientation="vertical"
-                  className="mx-2 data-[orientation=vertical]:h-4"
-                />
+    <OnboardingGuard completedSteps={completedSteps}>
+      <div className="flex h-screen bg-background">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset>
+            <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+              <div className="flex items-center justify-between px-4 w-full">
+                {/* Left Section */}
+                <div className="flex items-center">
+                  <SidebarTrigger className="-ml-1" />
+                  <Separator
+                    orientation="vertical"
+                    className="mx-2 data-[orientation=vertical]:h-4"
+                  />
+                </div>
+
+                {/* Right Section */}
+                <div className="flex items-center gap-4">
+                  {/* Notification Bell */}
+                  <button
+                    className="p-2 rounded-md hover:bg-muted transition"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-5 w-5" />
+                  </button>
+
+                  {/* Help Icon */}
+                  <button
+                    className="p-2 rounded-md hover:bg-muted transition"
+                    aria-label="Help"
+                  >
+                    <HelpCircle className="h-5 w-5" />
+                  </button>
+
+                  {/* Theme Toggle */}
+                  <ModeToggle />
+
+                  {/* User Dropdown */}
+                  <NavUser
+                    user={{
+                      name: user?.user_metadata?.name || "User",
+                      email: user?.email || "",
+                      avatar: user?.user_metadata?.avatar_url,
+                    }}
+                  />
+                </div>
               </div>
+            </header>
 
-              {/* Right Section */}
-              <div className="flex items-center gap-4">
-                {/* Notification Bell */}
-                <button
-                  className="p-2 rounded-md hover:bg-muted transition"
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-5 w-5" />
-                </button>
-
-                {/* Help Icon */}
-                <button
-                  className="p-2 rounded-md hover:bg-muted transition"
-                  aria-label="Help"
-                >
-                  <HelpCircle className="h-5 w-5" />
-                </button>
-
-                {/* Theme Toggle */}
-                <ModeToggle />
-
-                {/* User Dropdown */}
-                <NavUser
-                  user={{
-                    name: user?.user_metadata?.name || "User",
-                    email: user?.email || "",
-                    avatar: user?.user_metadata?.avatar_url,
-                  }}
-                />
-              </div>
-            </div>
-          </header>
-
-          <main className="flex-1 px-12">{children}</main>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+            <main className="flex-1 px-12">{children}</main>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
+    </OnboardingGuard>
   );
 }

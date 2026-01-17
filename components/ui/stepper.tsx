@@ -12,9 +12,10 @@ interface StepperProps {
   steps: Step[];
   currentStepIndex: number;
   completedSteps?: string[]; // Optional: explicit list of completed step IDs
+  onStepClick?: (stepId: string, stepIndex: number) => void; // Optional: callback when step is clicked
 }
 
-export function Stepper({ steps, currentStepIndex, completedSteps = [] }: StepperProps) {
+export function Stepper({ steps, currentStepIndex, completedSteps = [], onStepClick }: StepperProps) {
   return (
     <nav aria-label="Progress" className="w-full mb-2 sm:mb-4">
       <ol
@@ -36,17 +37,27 @@ export function Stepper({ steps, currentStepIndex, completedSteps = [] }: Steppe
 
           const stepNumber = stepIdx + 1;
 
+          const isClickable = onStepClick !== undefined;
+          // Allow clicking on any step if onStepClick is provided
+          const canNavigateToStep = isClickable;
+
           return (
             <li key={step.id} className="relative flex flex-1 items-center">
               {/* Step content */}
               <div
+                onClick={() => {
+                  if (isClickable && canNavigateToStep) {
+                    onStepClick(step.id, stepIdx);
+                  }
+                }}
                 className={cn(
                   "flex w-full items-center",
                   "gap-1.5 min-[375px]:gap-2 sm:gap-3",
                   "px-1.5 min-[375px]:px-2 sm:px-4",
                   "py-2 min-[375px]:py-2.5 sm:py-4",
                   "text-[10px] min-[375px]:text-[12px] sm:text-sm sm:text-base",
-                  "font-medium"
+                  "font-medium",
+                  isClickable && canNavigateToStep && "cursor-pointer hover:bg-gray-50 transition-colors"
                 )}
               >
                 {/* Circle */}

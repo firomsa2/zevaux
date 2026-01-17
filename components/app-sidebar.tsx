@@ -299,6 +299,7 @@ import {
   Shield,
   Package,
   Rocket,
+  PlugZap,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -316,6 +317,26 @@ import { createClient } from "@/utils/supabase/client";
 import { NavProjects } from "./nav-projects";
 import { getUserWithBusiness } from "@/utils/supabase/user";
 import { getBusinessById } from "@/utils/supabase/business";
+import { phoneNumberService } from "@/utils/supabase/phone-numbers";
+
+// Format phone number to (XXX) XXX-XXXX format
+function formatPhoneNumber(phone: string): string {
+  // Remove all non-digit characters
+  const cleaned = phone.replace(/\D/g, "");
+
+  // Format as (XXX) XXX-XXXX for US numbers
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+
+  // If it's 11 digits and starts with 1, format as +1 (XXX) XXX-XXXX
+  if (cleaned.length === 11 && cleaned.startsWith("1")) {
+    return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+  }
+
+  // Return original if it doesn't match expected format
+  return phone;
+}
 
 const data = {
   teams: [
@@ -468,6 +489,12 @@ const data = {
         // },
       ],
     },
+    {
+      title: "Integrations",
+      url: "/dashboard/integrations",
+      icon: PlugZap,
+      isActive: false,
+    },
   ],
   projects: [
     {
@@ -486,6 +513,22 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [user, setUser] = React.useState<User | null>(null);
   const [teams, setTeams] = React.useState(data.teams);
+  const [phoneNumber, setPhoneNumber] = React.useState<string | null>(null);
+  const [trialDaysRemaining, setTrialDaysRemaining] = React.useState<
+    number | null
+  >(null);
+
+  // Calculate days remaining in trial
+  const calculateTrialDaysRemaining = (
+    trialEnd: string | null,
+  ): number | null => {
+    if (!trialEnd) return null;
+    const trialEndDate = new Date(trialEnd);
+    const now = new Date();
+    const diffTime = trialEndDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
 
   console.log("🚀 ~ Sidebar render, user:", user, "teams:", teams);
   React.useEffect(() => {
@@ -507,7 +550,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }
 
         if (businessId) {
-          const { data: businessData } = await getBusinessById(businessId);
+          const supabase = createClient();
+
+          // Fetch business data and subscription in parallel
+          const [businessResult, subscriptionResult] = await Promise.all([
+            getBusinessById(businessId),
+            supabase
+              .from("subscriptions")
+              .select("status, trial_end")
+              .eq("business_id", businessId)
+              .maybeSingle(),
+          ]);
+
+          const { data: businessData } = businessResult;
+          const { data: subscription } = subscriptionResult;
+
           if (businessData) {
             setTeams([
               {
@@ -516,6 +573,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 plan: businessData.billing_plan || "Pro",
               },
             ]);
+
+            // Get phone number from business or phone endpoints
+            if (businessData.phone_main) {
+              setPhoneNumber(businessData.phone_main);
+            } else {
+              // Try to get from phone endpoints
+              const { data: phoneNumbers } =
+                await phoneNumberService.getPhoneNumbers(businessId);
+              if (phoneNumbers && phoneNumbers.length > 0) {
+                // Get the primary or first active phone number
+                const primaryPhone =
+                  phoneNumbers.find((p) => p.is_primary) ||
+                  phoneNumbers.find((p) => p.is_active);
+                if (primaryPhone) {
+                  setPhoneNumber(primaryPhone.phone_number);
+                }
+              }
+            }
+          }
+
+          // Check if user is on trial and calculate days remaining
+          if (
+            subscription &&
+            subscription.status === "trialing" &&
+            subscription.trial_end
+          ) {
+            const daysRemaining = calculateTrialDaysRemaining(
+              subscription.trial_end,
+            );
+            setTrialDaysRemaining(daysRemaining);
           }
         }
         console.log("🚀 ~ Sidebar updated teams:", teams);
@@ -530,19 +617,54 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     "🚀 ~ Sidebar render after data load, user:",
     user,
     "teams:",
-    teams
+    teams,
   );
+
+  const ActiveLogo = teams && teams.length > 0 ? teams[0].logo : Building;
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={teams} />
+        <div className="flex flex-col items-start">
+          <div className="flex items-center gap-2">
+            <div className="bg-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+              <ActiveLogo className="size-4" />
+            </div>
+            <span className="font-bold text-2xl tracking-tight text-primary">
+              Zevaux
+            </span>
+          </div>
+          <div className=" w-full flex items-center justify-center">
+            <TeamSwitcher teams={teams} showLogo={false} />
+          </div>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
         <NavProjects projects={data.projects} />
+        {(phoneNumber || trialDaysRemaining !== null) && (
+          <div className="px-2 py-3 border-t border-sidebar-border space-y-2">
+            {trialDaysRemaining !== null && (
+              <div className="text-xs text-sidebar-foreground/60 text-center">
+                {trialDaysRemaining === 0
+                  ? "Trial ends today"
+                  : trialDaysRemaining === 1
+                    ? "1 day left in your free trial"
+                    : `${trialDaysRemaining} days left in your free trial`}
+              </div>
+            )}
+            {phoneNumber && (
+              <div className="flex items-center gap-2 text-sm text-sidebar-foreground/70">
+                <Phone className="h-4 w-4" />
+                <span className="font-medium">
+                  {formatPhoneNumber(phoneNumber)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -1,5 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { saveOnboardingProgress } from "@/utils/onboarding";
+
+// Default business hours (Mon-Fri 9am-5pm, Sat-Sun closed)
+const DEFAULT_BUSINESS_HOURS = {
+  monday: [{ open: "09:00", close: "17:00" }],
+  tuesday: [{ open: "09:00", close: "17:00" }],
+  wednesday: [{ open: "09:00", close: "17:00" }],
+  thursday: [{ open: "09:00", close: "17:00" }],
+  friday: [{ open: "09:00", close: "17:00" }],
+  saturday: [], // Closed
+  sunday: [], // Closed
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (!businessId || !formData) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,59 +55,89 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    // Save FAQs to business_configs
-    if (formData.faqs && formData.faqs.length > 0) {
-      // Get existing config
-      const { data: existingConfig } = await supabase
-        .from("business_configs")
-        .select("*")
-        .eq("business_id", businessId)
-        .single();
+    // Save FAQs and default business hours to business_configs
+    // Get existing config
+    const { data: existingConfig } = await supabase
+      .from("business_configs")
+      .select("*")
+      .eq("business_id", businessId)
+      .single();
 
-      // Format FAQs for storage
-      const faqsForStorage = formData.faqs.map((faq: any) => ({
-        question: faq.question,
-        answer: faq.answer,
-      }));
+    // Format FAQs for storage
+    const faqsForStorage = formData.faqs?.length
+      ? formData.faqs.map((faq: any) => ({
+          question: faq.question,
+          answer: faq.answer,
+        }))
+      : [];
 
-      const configData = {
-        business_id: businessId,
-        config: {
-          ...(existingConfig?.config || {}),
-          faqs: faqsForStorage,
-        },
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: configError } = await supabase
-        .from("business_configs")
-        .upsert(configData, {
-          onConflict: "business_id",
-        });
-
-      if (configError) {
-        console.error("[v0] Config update error:", configError);
-        // Don't fail the whole request, just log the error
+    // Ensure config is always a plain object (not string or array)
+    let mergedConfig = {
+      ...(typeof existingConfig?.config === "object" &&
+      !Array.isArray(existingConfig.config)
+        ? existingConfig.config
+        : {}),
+      faqs: faqsForStorage,
+      hours: existingConfig?.config?.hours || DEFAULT_BUSINESS_HOURS,
+    };
+    // If somehow config is a stringified JSON, parse it
+    if (typeof existingConfig?.config === "string") {
+      try {
+        const parsed = JSON.parse(existingConfig.config);
+        if (typeof parsed === "object" && !Array.isArray(parsed)) {
+          mergedConfig = {
+            ...parsed,
+            faqs: faqsForStorage,
+            hours: parsed.hours || DEFAULT_BUSINESS_HOURS,
+          };
+        }
+      } catch (e) {
+        // ignore parse error, fallback to above
       }
     }
+    const configData = {
+      business_id: businessId,
+      config: mergedConfig,
+      updated_at: new Date().toISOString(),
+    };
 
-    // Create or update onboarding progress
-    const { error: progressError } = await supabase
-      .from("onboarding_progress")
-      .upsert(
-        {
-          business_id: businessId,
-          step_1_business_details: true,
-          step_1_agent_setup: true,
-          step_1_greeting_tone: true,
-          step_1_review: true,
-          current_step: 2,
-        },
-        { onConflict: "business_id" }
-      );
+    const { error: configError } = await supabase
+      .from("business_configs")
+      .upsert(configData, {
+        onConflict: "business_id",
+      });
+
+    if (configError) {
+      console.error("[v0] Config update error:", configError);
+      // Don't fail the whole request, just log the error
+    }
+
+    // Create or update onboarding progress (step 2)
+    const { error: progressError } = await saveOnboardingProgress(businessId, {
+      step_2_business_info: true,
+      step_1_review: true, // legacy flag for backward compatibility
+    });
 
     if (progressError) {
       console.error("[v0] Progress update error:", progressError);
+    }
+
+    // Trigger prompt webhook to generate AI prompt
+    try {
+      const webhookUrl = process.env.PROMPT_WEBHOOK_URL;
+      if (webhookUrl) {
+        // Fire and forget - don't wait for response
+        fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ business_id: businessId }),
+        }).catch((err) => console.error("Error calling prompt webhook:", err));
+      }
+    } catch (webhookError) {
+      console.error("[v0] Prompt webhook error:", webhookError);
+      // Don't fail the whole request, just log the error
     }
 
     return NextResponse.json({
@@ -106,7 +148,7 @@ export async function POST(request: NextRequest) {
     console.error("[v0] Save business info error:", error);
     return NextResponse.json(
       { error: "Failed to save business information" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

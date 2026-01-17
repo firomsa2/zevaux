@@ -90,7 +90,6 @@ export async function GET(request: Request) {
             } else if (
               currentStep?.id === "business_info" ||
               currentStep?.id === "phone_verification" ||
-              currentStep?.id === "test_call" ||
               currentStep?.id === "go_live"
             ) {
               next = "/dashboard/onboarding";

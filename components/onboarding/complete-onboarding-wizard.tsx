@@ -40,7 +40,7 @@ import {
 import type { Business } from "@/types/database";
 import { triggerOnboardingRefresh } from "@/utils/onboarding-refresh";
 
-// CHANGED: Consolidated onboarding flow with 5 critical steps for SMBs
+// CHANGED: Consolidated onboarding flow with 4 critical steps for SMBs
 const ONBOARDING_STEPS = [
   {
     id: "business_info",
@@ -63,13 +63,7 @@ const ONBOARDING_STEPS = [
     icon: Zap,
   },
   {
-    id: "knowledge_base",
-    title: "Knowledge Base",
-    description: "Help the AI understand your business with documents or FAQs",
-    icon: FileText,
-  },
-  {
-    id: "test_call",
+    id: "go_live",
     title: "Ready to Go Live",
     description: "Review your setup and activate your AI receptionist",
     icon: CheckCircle2,

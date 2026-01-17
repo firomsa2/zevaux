@@ -58,7 +58,6 @@ export type OnboardingStepId =
   | "website_training"
   | "business_info"
   | "phone_verification"
-  | "test_call"
   | "go_live";
 
 export type BusinessInfoSubStepId =

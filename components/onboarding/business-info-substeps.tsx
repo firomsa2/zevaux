@@ -25,7 +25,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRight, ArrowLeft, AlertCircle, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  AlertCircle,
+  Plus,
+  Trash2,
+  Edit2,
+  Check,
+} from "lucide-react";
 import type { Business } from "@/types/database";
 
 interface BusinessInfoSubStepsProps {
@@ -116,7 +124,27 @@ export function BusinessInfoSubSteps({
 }: BusinessInfoSubStepsProps) {
   const [currentSubStep, setCurrentSubStep] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const [isEditing, setIsEditing] = useState(() => !Boolean(scrapedConfig));
+
+  // Track which specific fields are being edited
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>(
+    () => {
+      // If no scraped config, all primary fields are editable by default
+      if (!Boolean(scrapedConfig)) {
+        return {
+          businessName: true,
+          industry: true,
+          businessDescription: true,
+          agentName: true,
+          personalizedGreeting: true,
+        };
+      }
+      // Otherwise, all fields start as read-only
+      return {} as Record<string, boolean>;
+    },
+  );
+
+  // Per-FAQ editing state (keyed by faq.id)
+  const [faqEditing, setFaqEditing] = useState<Record<string, boolean>>({});
 
   // Initialize form data with logic to handle scraped content
   const initializeFormData = () => {
@@ -129,7 +157,7 @@ export function BusinessInfoSubSteps({
 
     if (scrapedInd) {
       const match = INDUSTRIES.find(
-        (i) => i.toLowerCase() === scrapedInd.toLowerCase()
+        (i) => i.toLowerCase() === scrapedInd.toLowerCase(),
       );
       if (match) {
         industry = match.toLowerCase();
@@ -148,16 +176,21 @@ export function BusinessInfoSubSteps({
       industry = "other";
     }
 
-    // Determine FAQs from services if available
+    // Determine FAQs from services if available (limit to first 2 suggestions)
     let initialFaqs: FAQ[] = [];
     if (scrapedConfig?.services && Array.isArray(scrapedConfig.services)) {
-      initialFaqs = scrapedConfig.services.map((s: any, i: number) => ({
-        id: Date.now().toString() + i,
-        question: `Do you offer ${s.name}?`,
-        answer: [s.description, s.price ? `Price starts at $${s.price}.` : null]
-          .filter(Boolean)
-          .join(" "),
-      }));
+      initialFaqs = scrapedConfig.services
+        .map((s: any, i: number) => ({
+          id: Date.now().toString() + i,
+          question: `Do you offer ${s.name}?`,
+          answer: [
+            s.description,
+            s.price ? `Price starts at $${s.price}.` : null,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        }))
+        .slice(0, 2); // only keep two suggestions by default
     }
 
     return {
@@ -176,9 +209,19 @@ export function BusinessInfoSubSteps({
     };
   };
 
-  const [formData, setFormData] = useState<BusinessInfoFormData>(
-    initializeFormData()
-  );
+  const [formData, setFormData] =
+    useState<BusinessInfoFormData>(initializeFormData());
+
+  // Determine which FAQs to display: always first two suggestions,
+  // plus any FAQs currently in edit mode (so newly added FAQs show up).
+  const displayedFaqs = (() => {
+    const allFaqs: FAQ[] = formData?.faqs || [];
+    const base = allFaqs.slice(0, 2);
+    const extras = allFaqs.filter(
+      (f) => faqEditing[f.id] && !base.some((b) => b.id === f.id),
+    );
+    return [...base, ...extras];
+  })();
 
   // Effect to update form if scrapedConfig loads later (though typically it should be passed initially)
   useEffect(() => {
@@ -187,7 +230,7 @@ export function BusinessInfoSubSteps({
       // adopt it (prefill) and default to read-only until they click Edit.
       if (!hasInteracted) {
         setFormData(initializeFormData());
-        setIsEditing(false);
+        setEditingFields({});
       }
     }
   }, [scrapedConfig]); // Minimal dependency to avoid reset loops
@@ -196,13 +239,26 @@ export function BusinessInfoSubSteps({
     Record<string, string>
   >({});
 
+  // Helper function to toggle editing for a specific field
+  const toggleFieldEdit = (fieldName: string) => {
+    setEditingFields((prev) => ({
+      ...prev,
+      [fieldName]: !prev[fieldName],
+    }));
+  };
+
+  // Helper function to check if a field is editable
+  const isFieldEditing = (fieldName: string) => {
+    return editingFields[fieldName] || false;
+  };
+
   const subStep = SUB_STEPS[currentSubStep];
   const isFirst = currentSubStep === 0;
   const isLast = currentSubStep === SUB_STEPS.length - 1;
   const progress = ((currentSubStep + 1) / SUB_STEPS.length) * 100;
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setHasInteracted(true);
     const { name, value } = e.target;
@@ -278,9 +334,30 @@ export function BusinessInfoSubSteps({
 
   const handleNext = async () => {
     if (!validateCurrentStep()) {
-      // If we're in read-only mode and validation fails, force edit mode
-      // so the user can fix missing/invalid fields.
-      if (!isEditing) setIsEditing(true);
+      // If validation fails, enable editing for fields with errors
+      Object.keys(validationErrors).forEach((key) => {
+        const fieldName = key.split("_")[0]; // Extract base field name from error key
+        if (
+          [
+            "businessName",
+            "industry",
+            "businessDescription",
+            "agentName",
+            "personalizedGreeting",
+          ].includes(fieldName)
+        ) {
+          setEditingFields((prev) => ({ ...prev, [fieldName]: true }));
+        }
+
+        // If FAQ validation failed, put each FAQ into edit mode
+        if (fieldName === "faqs") {
+          const map: Record<string, boolean> = {};
+          (formData.faqs || []).forEach((f) => {
+            map[f.id] = true;
+          });
+          setFaqEditing((prev) => ({ ...prev, ...map }));
+        }
+      });
       return;
     }
 
@@ -316,38 +393,23 @@ export function BusinessInfoSubSteps({
     <div className="w-full">
       {/* Sub-step Content */}
       <Card>
-        <CardHeader className="pb-0 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-          {/* <div className=""> */}
-          <div className="flex flex-col gap-1">
-            <CardTitle className="text-xl">{subStep.title}</CardTitle>
-            <CardDescription className="text-sm">
-              {subStep.description}
-            </CardDescription>
-          </div>
+        <CardHeader className="pb-0 pt-0 grid grid-cols-1 gap-4 items-center">
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-xl">Welcome to Zevaux</CardTitle>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                disabled={loading || isEditing}
-              >
-                Edit
-              </Button>
+              <div>
+                <CardTitle className="text-xl">{subStep.title}</CardTitle>
+                <CardDescription className="text-sm">
+                  {subStep.description}
+                </CardDescription>
+              </div>
             </div>
-            <CardDescription className="text-sm">
-              Let's get your AI receptionist up and running
-            </CardDescription>
-            {!isEditing && scrapedConfig && (
-              <CardDescription className="text-xs">
-                We pre-filled these fields from your website. Click Edit to
-                change anything.
+            {scrapedConfig && (
+              <CardDescription className="text-xs text-muted-foreground">
+                We pre-filled these fields from your website. Click the edit
+                icon next to any field to modify it.
               </CardDescription>
             )}
           </div>
-          {/* </div> */}
         </CardHeader>
         <CardContent className="space-y-4 ">
           {error && (
@@ -363,16 +425,38 @@ export function BusinessInfoSubSteps({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldGroup>
                   <Field>
-                    <FieldLabel htmlFor="businessName">
-                      Business Name
-                    </FieldLabel>
+                    <div className="flex items-center justify-between mb-2">
+                      <FieldLabel htmlFor="businessName">
+                        Business Name
+                      </FieldLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleFieldEdit("businessName")}
+                        disabled={loading}
+                        className="h-7 px-2"
+                      >
+                        {isFieldEditing("businessName") ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Done</span>
+                          </>
+                        ) : (
+                          <>
+                            <Edit2 className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Edit</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
                     <Input
                       id="businessName"
                       name="businessName"
                       value={formData.businessName}
                       onChange={handleInputChange}
                       placeholder="e.g., John's Dental Practice"
-                      disabled={loading || !isEditing}
+                      disabled={loading || !isFieldEditing("businessName")}
                     />
                   </Field>
                   {validationErrors.businessName && (
@@ -384,13 +468,35 @@ export function BusinessInfoSubSteps({
 
                 <FieldGroup>
                   <Field>
-                    <FieldLabel htmlFor="industry">Industry</FieldLabel>
+                    <div className="flex items-center justify-between mb-2">
+                      <FieldLabel htmlFor="industry">Industry</FieldLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleFieldEdit("industry")}
+                        disabled={loading}
+                        className="h-7 px-2"
+                      >
+                        {isFieldEditing("industry") ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Done</span>
+                          </>
+                        ) : (
+                          <>
+                            <Edit2 className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Edit</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
                     <Select
                       value={formData.industry}
                       onValueChange={(value) =>
                         handleSelectChange("industry", value)
                       }
-                      disabled={loading || !isEditing}
+                      disabled={loading || !isFieldEditing("industry")}
                     >
                       <SelectTrigger id="industry">
                         <SelectValue placeholder="Select industry" />
@@ -419,7 +525,7 @@ export function BusinessInfoSubSteps({
                         value={formData.industryOther || ""}
                         onChange={handleInputChange}
                         placeholder="Specify your industry"
-                        disabled={loading || !isEditing}
+                        disabled={loading || !isFieldEditing("industry")}
                         className="mt-1"
                       />
                       {validationErrors.industryOther && (
@@ -434,9 +540,31 @@ export function BusinessInfoSubSteps({
 
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="businessDescription">
-                    Description
-                  </FieldLabel>
+                  <div className="flex items-center justify-between mb-2">
+                    <FieldLabel htmlFor="businessDescription">
+                      Description
+                    </FieldLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFieldEdit("businessDescription")}
+                      disabled={loading}
+                      className="h-7 px-2"
+                    >
+                      {isFieldEditing("businessDescription") ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1" />
+                          <span className="text-xs">Done</span>
+                        </>
+                      ) : (
+                        <>
+                          <Edit2 className="h-3.5 w-3.5 mr-1" />
+                          <span className="text-xs">Edit</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   <Textarea
                     id="businessDescription"
                     name="businessDescription"
@@ -444,7 +572,7 @@ export function BusinessInfoSubSteps({
                     onChange={handleInputChange}
                     placeholder="Brief description of your business..."
                     rows={3}
-                    disabled={loading || !isEditing}
+                    disabled={loading || !isFieldEditing("businessDescription")}
                   />
                 </Field>
                 {validationErrors.businessDescription && (
@@ -461,16 +589,38 @@ export function BusinessInfoSubSteps({
             <div className="space-y-4">
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="agentName">
-                    AI Receptionist Name
-                  </FieldLabel>
+                  <div className="flex items-center justify-between mb-2">
+                    <FieldLabel htmlFor="agentName">
+                      AI Receptionist Name
+                    </FieldLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFieldEdit("agentName")}
+                      disabled={loading}
+                      className="h-7 px-2"
+                    >
+                      {isFieldEditing("agentName") ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1" />
+                          <span className="text-xs">Done</span>
+                        </>
+                      ) : (
+                        <>
+                          <Edit2 className="h-3.5 w-3.5 mr-1" />
+                          <span className="text-xs">Edit</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   <Input
                     id="agentName"
                     name="agentName"
                     value={formData.agentName}
                     onChange={handleInputChange}
                     placeholder="e.g., Sarah, Alex"
-                    disabled={loading || !isEditing}
+                    disabled={loading || !isFieldEditing("agentName")}
                   />
                 </Field>
                 {validationErrors.agentName && (
@@ -482,9 +632,31 @@ export function BusinessInfoSubSteps({
 
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="personalizedGreeting">
-                    Welcome Greeting
-                  </FieldLabel>
+                  <div className="flex items-center justify-between mb-2">
+                    <FieldLabel htmlFor="personalizedGreeting">
+                      Welcome Greeting
+                    </FieldLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFieldEdit("personalizedGreeting")}
+                      disabled={loading}
+                      className="h-7 px-2"
+                    >
+                      {isFieldEditing("personalizedGreeting") ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1" />
+                          <span className="text-xs">Done</span>
+                        </>
+                      ) : (
+                        <>
+                          <Edit2 className="h-3.5 w-3.5 mr-1" />
+                          <span className="text-xs">Edit</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   <Textarea
                     id="personalizedGreeting"
                     name="personalizedGreeting"
@@ -496,7 +668,9 @@ export function BusinessInfoSubSteps({
                       formData.agentName || "Sarah"
                     }. How can I help you?`}
                     rows={3}
-                    disabled={loading || !isEditing}
+                    disabled={
+                      loading || !isFieldEditing("personalizedGreeting")
+                    }
                   />
                 </Field>
                 {validationErrors.personalizedGreeting && (
@@ -511,124 +685,184 @@ export function BusinessInfoSubSteps({
           {/* FAQs Sub-step */}
           {currentSubStep === 2 && (
             <div className="space-y-4">
-              {validationErrors.faqs && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">
-                    {validationErrors.faqs}
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                {formData.faqs.map((faq, index) => (
-                  <Card key={faq.id} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          FAQ {index + 1}
-                        </span>
-                        {formData.faqs.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setHasInteracted(true);
-                              setFormData((prev) => ({
-                                ...prev,
-                                faqs: prev.faqs.filter((f) => f.id !== faq.id),
-                              }));
-                            }}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            disabled={loading || !isEditing}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <FieldLabel>Question</FieldLabel>
-                          <Input
-                            value={faq.question}
-                            onChange={(e) => {
-                              setHasInteracted(true);
-                              const newFaqs = [...formData.faqs];
-                              newFaqs[index] = {
-                                ...faq,
-                                question: e.target.value,
-                              };
-                              setFormData((prev) => ({
-                                ...prev,
-                                faqs: newFaqs,
-                              }));
-                            }}
-                            placeholder="e.g., What are your opening hours?"
-                            disabled={loading || !isEditing}
-                          />
-                          {validationErrors[`faq_${index}_question`] && (
-                            <p className="text-sm text-red-600 mt-1">
-                              {validationErrors[`faq_${index}_question`]}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <FieldLabel>Answer</FieldLabel>
-                          <Textarea
-                            value={faq.answer}
-                            onChange={(e) => {
-                              setHasInteracted(true);
-                              const newFaqs = [...formData.faqs];
-                              newFaqs[index] = {
-                                ...faq,
-                                answer: e.target.value,
-                              };
-                              setFormData((prev) => ({
-                                ...prev,
-                                faqs: newFaqs,
-                              }));
-                            }}
-                            placeholder="e.g., We are open Monday to Friday from 9am to 5pm."
-                            rows={2}
-                            disabled={loading || !isEditing}
-                          />
-                          {validationErrors[`faq_${index}_answer`] && (
-                            <p className="text-sm text-red-600 mt-1">
-                              {validationErrors[`faq_${index}_answer`]}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  {validationErrors.faqs && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-600">
+                        {validationErrors.faqs}
+                      </p>
                     </div>
-                  </Card>
-                ))}
+                  )}
+                </div>
+                <div />
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setHasInteracted(true);
-                  setFormData((prev) => ({
-                    ...prev,
-                    faqs: [
-                      ...prev.faqs,
-                      {
-                        id: Date.now().toString(),
-                        question: "",
-                        answer: "",
-                      },
-                    ],
-                  }));
-                }}
-                className="w-full"
-                disabled={loading || !isEditing}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add FAQ
-              </Button>
+              <div className="space-y-3">
+                {displayedFaqs.map((faq, displayIndex) => {
+                  const index = (formData.faqs || []).findIndex(
+                    (x) => x.id === faq.id,
+                  );
+                  return (
+                    <Card key={faq.id} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            FAQ {index + 1}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setFaqEditing((prev) => ({
+                                  ...prev,
+                                  [faq.id]: !prev[faq.id],
+                                }));
+                              }}
+                              className="h-7 px-2"
+                              disabled={loading}
+                            >
+                              {faqEditing[faq.id] ? (
+                                <>
+                                  <Check className="h-3.5 w-3.5 mr-1" />
+                                  <span className="text-xs">Done</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Edit2 className="h-3.5 w-3.5 mr-1" />
+                                  <span className="text-xs">Edit</span>
+                                </>
+                              )}
+                            </Button>
+
+                            {formData.faqs.length > 1 && faqEditing[faq.id] && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setHasInteracted(true);
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    faqs: prev.faqs.filter(
+                                      (f) => f.id !== faq.id,
+                                    ),
+                                  }));
+                                  setFaqEditing((prev) => {
+                                    const next = { ...prev };
+                                    delete next[faq.id];
+                                    return next;
+                                  });
+                                }}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                disabled={loading}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <FieldLabel>Question</FieldLabel>
+                            <Input
+                              value={faq.question}
+                              onChange={(e) => {
+                                setHasInteracted(true);
+                                const newFaqs = [...formData.faqs];
+                                const idx = newFaqs.findIndex(
+                                  (x) => x.id === faq.id,
+                                );
+                                if (idx > -1) {
+                                  newFaqs[idx] = {
+                                    ...faq,
+                                    question: e.target.value,
+                                  };
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    faqs: newFaqs,
+                                  }));
+                                }
+                              }}
+                              placeholder="e.g., What are your opening hours?"
+                              disabled={loading || !faqEditing[faq.id]}
+                            />
+                            {validationErrors[`faq_${index}_question`] && (
+                              <p className="text-sm text-red-600 mt-1">
+                                {validationErrors[`faq_${index}_question`]}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <FieldLabel>Answer</FieldLabel>
+                            <Textarea
+                              value={faq.answer}
+                              onChange={(e) => {
+                                setHasInteracted(true);
+                                const newFaqs = [...formData.faqs];
+                                const idx = newFaqs.findIndex(
+                                  (x) => x.id === faq.id,
+                                );
+                                if (idx > -1) {
+                                  newFaqs[idx] = {
+                                    ...faq,
+                                    answer: e.target.value,
+                                  };
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    faqs: newFaqs,
+                                  }));
+                                }
+                              }}
+                              placeholder="e.g., We are open Monday to Friday from 9am to 5pm."
+                              rows={2}
+                              disabled={loading || !faqEditing[faq.id]}
+                            />
+                            {validationErrors[`faq_${index}_answer`] && (
+                              <p className="text-sm text-red-600 mt-1">
+                                {validationErrors[`faq_${index}_answer`]}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setHasInteracted(true);
+                    const newFaq = {
+                      id: Date.now().toString(),
+                      question: "",
+                      answer: "",
+                    };
+                    // Append new FAQ to the end so it becomes the 3rd item
+                    setFormData((prev) => ({
+                      ...prev,
+                      faqs: Array.isArray(prev.faqs)
+                        ? [...prev.faqs, newFaq]
+                        : [newFaq],
+                    }));
+                    // open edit mode for new FAQ
+                    setFaqEditing((prev) => ({ ...prev, [newFaq.id]: true }));
+                  }}
+                  className="w-full"
+                  disabled={loading}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add FAQ
+                </Button>
+              </div>
 
               {formData.faqs.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-2">

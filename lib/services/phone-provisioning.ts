@@ -1,7 +1,11 @@
 import { phoneNumberService } from "@/utils/supabase/phone-numbers";
 
 export class PhoneProvisioningService {
-  async provisionPhoneNumberForBusiness(businessId: string, areaCode?: string) {
+  async provisionPhoneNumberForBusiness(
+    businessId: string,
+    areaCode?: string,
+    supabase?: any,
+  ) {
     const SEARCH_WEBHOOK_URL = process.env.N8N_PHONE_SEARCH_WEBHOOK_URL;
     const BUY_WEBHOOK_URL = process.env.N8N_PHONE_BUY_WEBHOOK_URL;
 
@@ -32,7 +36,7 @@ export class PhoneProvisioningService {
 
       if (!Array.isArray(availableNumbers) || availableNumbers.length === 0) {
         throw new Error(
-          "No available phone numbers returned from search webhook"
+          "No available phone numbers returned from search webhook",
         );
       }
 
@@ -67,9 +71,79 @@ export class PhoneProvisioningService {
         throw new Error(`Buy webhook failed: ${errorText}`);
       }
 
-      // 4. Return success (The UI will poll the DB to see the new number)
+      const buyData = await buyResponse.json().catch(() => ({}));
+      const purchasedNumber = buyData.phoneNumber as string | undefined;
+      const purchasedFriendly = (buyData as any).friendlyName || friendlyName;
+      const channelType = (buyData as any).channelType || "voice";
+
+      console.log(
+        "[phone-provisioning] Buy webhook response number:",
+        purchasedNumber,
+      );
+
+      // Persist the purchased phone number so business and phone_endpoints stay in sync
+      if (supabase && purchasedNumber) {
+        try {
+          // Upsert phone_endpoints
+          const { data: existingEndpoint } = await supabase
+            .from("phone_endpoints")
+            .select("id, status")
+            .eq("business_id", businessId)
+            .eq("phone_number", purchasedNumber)
+            .maybeSingle();
+
+          if (!existingEndpoint) {
+            await supabase.from("phone_endpoints").insert({
+              business_id: businessId,
+              phone_number: purchasedNumber,
+              name: purchasedFriendly || purchasedNumber,
+              channel_type: channelType,
+              status: "active",
+            });
+          } else if (existingEndpoint.status !== "active") {
+            await supabase
+              .from("phone_endpoints")
+              .update({ status: "active" })
+              .eq("id", existingEndpoint.id);
+          }
+
+          // Set business phone_main if missing
+          const { data: businessData } = await supabase
+            .from("businesses")
+            .select("phone_main")
+            .eq("id", businessId)
+            .single();
+
+          if (!businessData?.phone_main) {
+            await supabase
+              .from("businesses")
+              .update({
+                phone_main: purchasedNumber,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", businessId);
+          }
+
+          // Mark onboarding phone step completed
+          await supabase
+            .from("onboarding_progress")
+            .update({
+              phone_provisioning_status: "completed",
+              step_3_phone_setup: true,
+              step_2_phone_verified: true,
+            })
+            .eq("business_id", businessId);
+        } catch (persistError) {
+          console.error(
+            "[phone-provisioning] Failed to persist purchased number:",
+            persistError,
+          );
+        }
+      }
+
+      // 4. Return success and only include phoneNumber if purchased webhook returned it
       console.log("Phone number purchase request sent successfully");
-      return { success: true, phoneNumber };
+      return { success: true, phoneNumber: purchasedNumber };
     } catch (error) {
       console.error("Provisioning failed:", error);
       throw error;

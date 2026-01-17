@@ -10,7 +10,6 @@ import {
   type BusinessInfoFormData,
 } from "./business-info-substeps";
 import { PhoneVerificationStep } from "./phone-verification-step";
-import { TestCallStep } from "./test-call-step";
 import { WebsiteUrlStep } from "./website-url-step";
 import { PlansOverview } from "@/components/billing/plans-overview";
 import type { Business, Plan } from "@/types/database";
@@ -26,7 +25,6 @@ type OnboardingStep =
   | "website_url"
   | "business_info"
   | "phone_verification"
-  | "test_call"
   | "pricing";
 
 export function EnhancedOnboardingWizard({
@@ -41,14 +39,17 @@ export function EnhancedOnboardingWizard({
   const [loading, setLoading] = useState(true); // Start with loading to fetch progress
   const [error, setError] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Set<OnboardingStep>>(
-    new Set()
+    new Set(),
   );
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null);
   const [businessConfig, setBusinessConfig] = useState<any>(null);
   const [phoneData, setPhoneData] = useState({
     phoneNumber: initialBusiness.phone_main || null,
-    status: "pending" as "pending" | "in_progress" | "completed" | "failed",
+    // Initialize as "completed" if phone already exists, otherwise "pending"
+    status: initialBusiness.phone_main
+      ? ("completed" as "pending" | "in_progress" | "completed" | "failed")
+      : ("pending" as "pending" | "in_progress" | "completed" | "failed"),
     error: null as string | null,
   });
 
@@ -115,17 +116,23 @@ export function EnhancedOnboardingWizard({
       try {
         // First, check if a phone number already exists and set phone_main if needed
         const phoneStatusResponse = await fetch(
-          `/api/phone/status/${business.id}`
+          `/api/phone/status/${business.id}`,
         );
+        let phoneAlreadyExists = false;
         if (phoneStatusResponse.ok) {
           const phoneStatus = await phoneStatusResponse.json();
-          if (phoneStatus.status === "completed" && phoneStatus.phoneNumber) {
+          if (
+            (phoneStatus.status === "completed" ||
+              phoneStatus.status === "active") &&
+            phoneStatus.phoneNumber
+          ) {
             // Phone exists and is active - update phone data
             setPhoneData({
               phoneNumber: phoneStatus.phoneNumber,
               status: "completed",
               error: null,
             });
+            phoneAlreadyExists = true;
           }
         }
 
@@ -133,7 +140,23 @@ export function EnhancedOnboardingWizard({
         if (response.ok) {
           const progress = await response.json();
 
-          // Determine completed steps
+          // Initialize phone data from progress API if available
+          if (progress.phoneNumber && progress.phoneProvisioningStatus) {
+            const mappedStatus =
+              progress.phoneProvisioningStatus === "active"
+                ? "completed"
+                : progress.phoneProvisioningStatus;
+            setPhoneData({
+              phoneNumber: progress.phoneNumber,
+              status: mappedStatus,
+              error: progress.phoneProvisioningError || null,
+            });
+            if (mappedStatus === "completed") {
+              phoneAlreadyExists = true;
+            }
+          }
+
+          // Determine completed steps from API response
           const completed = new Set<OnboardingStep>();
           if (progress.steps) {
             progress.steps.forEach((step: any) => {
@@ -144,13 +167,19 @@ export function EnhancedOnboardingWizard({
                 if (step.id === "business_info") completed.add("business_info");
                 if (step.id === "phone_verification")
                   completed.add("phone_verification");
-                if (step.id === "test_call") completed.add("test_call");
+                if (step.id === "go_live") completed.add("pricing");
               }
             });
           }
+
+          // Also mark phone_verification as completed if phone exists (even if flag not set)
+          if (phoneAlreadyExists) {
+            completed.add("phone_verification");
+          }
+
           setCompletedSteps(completed);
 
-          // Determine current step based on progress
+          // Determine current step based on progress - resume from where user left off
           const currentProgressStep = progress.currentStep;
           if (currentProgressStep) {
             // Map progress step ID to onboarding step
@@ -160,22 +189,30 @@ export function EnhancedOnboardingWizard({
               setCurrentStep("business_info");
             } else if (currentProgressStep.id === "phone_verification") {
               setCurrentStep("phone_verification");
-            } else if (currentProgressStep.id === "test_call") {
-              setCurrentStep("test_call");
             } else if (currentProgressStep.id === "go_live") {
               setCurrentStep("pricing");
             } else {
-              // Default: start from website_url if not completed
-              setCurrentStep(
-                completed.has("website_url") ? "business_info" : "website_url"
-              );
+              // Default: find first incomplete step
+              if (!completed.has("website_url")) {
+                setCurrentStep("website_url");
+              } else if (!completed.has("business_info")) {
+                setCurrentStep("business_info");
+              } else if (!completed.has("phone_verification")) {
+                setCurrentStep("phone_verification");
+              } else {
+                setCurrentStep("pricing");
+              }
             }
           } else {
-            // If no current step, determine from completed steps
-            if (completed.has("website_url")) {
-              setCurrentStep("business_info");
-            } else {
+            // If no current step from API, determine from completed steps
+            if (!completed.has("website_url")) {
               setCurrentStep("website_url");
+            } else if (!completed.has("business_info")) {
+              setCurrentStep("business_info");
+            } else if (!completed.has("phone_verification")) {
+              setCurrentStep("phone_verification");
+            } else {
+              setCurrentStep("pricing");
             }
           }
         }
@@ -193,7 +230,7 @@ export function EnhancedOnboardingWizard({
           // Get current plan if business has a billing_plan
           if (business.billing_plan) {
             const currentPlanData = plansData.find(
-              (p) => p.id === business.billing_plan
+              (p) => p.id === business.billing_plan,
             );
             if (currentPlanData) {
               setCurrentPlan(currentPlanData);
@@ -207,7 +244,7 @@ export function EnhancedOnboardingWizard({
         console.error("Error fetching onboarding progress:", error);
         // Fallback to checking business.website
         setCurrentStep(
-          initialBusiness.website ? "business_info" : "website_url"
+          initialBusiness.website ? "business_info" : "website_url",
         );
       } finally {
         setLoading(false);
@@ -221,7 +258,6 @@ export function EnhancedOnboardingWizard({
     { id: "website_url", label: "Website" },
     { id: "business_info", label: "Business Info" },
     { id: "phone_verification", label: "Phone Setup" },
-    { id: "test_call", label: "Test Call" },
     { id: "pricing", label: "Select Plan" },
   ];
 
@@ -417,55 +453,77 @@ export function EnhancedOnboardingWizard({
         description: "Business information saved",
       });
 
-      // Trigger phone provisioning in the background
-      try {
-        const provisionResponse = await fetch("/api/phone/request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ businessId: business.id }),
-        });
+      // Only trigger phone provisioning if phone doesn't already exist
+      // The API endpoint is idempotent, but we avoid unnecessary calls
+      const phoneAlreadyExists =
+        phoneData.status === "completed" && phoneData.phoneNumber;
 
-        if (provisionResponse.ok) {
-          const provisionData = await provisionResponse.json();
-          // If we got the number back immediately, use it
-          if (provisionData.phoneNumber) {
-            setPhoneData({
-              phoneNumber: provisionData.phoneNumber,
-              status: "completed",
-              error: null,
-            });
-            toast({
-              title: "Success",
-              description: `Phone number ${provisionData.phoneNumber} assigned!`,
-            });
+      if (!phoneAlreadyExists && !completedSteps.has("phone_verification")) {
+        try {
+          const provisionResponse = await fetch("/api/phone/request", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ businessId: business.id }),
+          });
+
+          if (provisionResponse.ok) {
+            const provisionData = await provisionResponse.json();
+            // If we got the number back immediately, use it
+            if (provisionData.phoneNumber) {
+              setPhoneData({
+                phoneNumber: provisionData.phoneNumber,
+                status: "completed",
+                error: null,
+              });
+
+              // Show different message if phone already existed
+              if (provisionData.alreadyExists) {
+                toast({
+                  title: "Phone Ready",
+                  description: `Your phone number ${provisionData.phoneNumber} is already assigned.`,
+                });
+              } else {
+                toast({
+                  title: "Success",
+                  description: `Phone number ${provisionData.phoneNumber} assigned!`,
+                });
+              }
+            } else {
+              // Otherwise fallback to polling
+              setPhoneData({
+                phoneNumber: null,
+                status: "in_progress",
+                error: null,
+              });
+            }
           } else {
-            // Otherwise fallback to polling
-            setPhoneData({
-              phoneNumber: null,
-              status: "in_progress",
-              error: null,
-            });
+            // If already requested or other error, check status instead
+            const errorData = await provisionResponse.json();
+            console.log("Provision request result:", errorData);
           }
-        } else {
-          // If already requested or other error, just ignore for now or handle gracefully
-          const errorData = await provisionResponse.json();
-          // Actually if it fails we might want to let user retry in next step
-          console.log("Provision request result:", errorData);
+        } catch (provisionError) {
+          console.error("[v0] Phone provisioning error:", provisionError);
+          setPhoneData({
+            phoneNumber: null,
+            status: "failed",
+            error: "Failed to initiate provisioning",
+          });
         }
-      } catch (provisionError) {
-        console.error("[v0] Phone provisioning error:", provisionError);
-        setPhoneData({
-          phoneNumber: null,
-          status: "failed",
-          error: "Failed to initiate provisioning",
-        });
+      } else {
+        // Phone already exists, just log it
+        console.log(
+          "[v0] Phone already exists, skipping provisioning:",
+          phoneData.phoneNumber,
+        );
       }
 
       // Move to next step
       setCurrentStep("phone_verification");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to complete business setup"
+        err instanceof Error
+          ? err.message
+          : "Failed to complete business setup",
       );
       toast({
         title: "Error",
@@ -479,6 +537,25 @@ export function EnhancedOnboardingWizard({
 
   const handlePhoneVerified = async () => {
     try {
+      // Ensure we use the active phone saved in phone_endpoints (authoritative source)
+      let phoneNumberToSave = phoneData.phoneNumber;
+
+      if (!phoneNumberToSave) {
+        const statusRes = await fetch(`/api/phone/status/${business.id}`);
+        if (statusRes.ok) {
+          const statusData = await statusRes.json();
+          if (statusData.phoneNumber) {
+            phoneNumberToSave = statusData.phoneNumber;
+            setPhoneData((prev) => ({
+              ...prev,
+              phoneNumber: statusData.phoneNumber,
+              status:
+                statusData.status === "active" ? "completed" : prev.status,
+            }));
+          }
+        }
+      }
+
       // Explicitly mark phone as verified in the database
       // This ensures phone_main is set and onboarding progress is updated
       const response = await fetch("/api/onboarding/mark-phone-verified", {
@@ -486,7 +563,7 @@ export function EnhancedOnboardingWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessId: business.id,
-          phoneNumber: phoneData.phoneNumber,
+          phoneNumber: phoneNumberToSave,
         }),
       });
 
@@ -502,45 +579,13 @@ export function EnhancedOnboardingWizard({
         console.log("[v0] Phone verification saved to database");
       }
 
-      // Update local state
+      // Update local state and go directly to pricing
       setCompletedSteps((prev) => new Set(prev).add("phone_verification"));
-      setCurrentStep("test_call");
+      setCurrentStep("pricing");
     } catch (error) {
       console.error("[v0] Error verifying phone:", error);
       // Still proceed even if save fails
       setCompletedSteps((prev) => new Set(prev).add("phone_verification"));
-      setCurrentStep("test_call");
-    }
-  };
-
-  const handleTestCallComplete = async () => {
-    try {
-      // Save test call completion to database
-      const response = await fetch("/api/onboarding/mark-test-call-complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessId: business.id }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        console.error("Failed to save test call completion:", data.error);
-        toast({
-          title: "Warning",
-          description:
-            "Test call completed but progress may not have been saved",
-          variant: "destructive",
-        });
-      }
-
-      // Mark test_call as completed in local state
-      setCompletedSteps((prev) => new Set(prev).add("test_call"));
-      // Instead of finishing, go to Pricing
-      setCurrentStep("pricing");
-    } catch (error) {
-      console.error("Error saving test call completion:", error);
-      // Still proceed with UI update even if save fails
-      setCompletedSteps((prev) => new Set(prev).add("test_call"));
       setCurrentStep("pricing");
     }
   };
@@ -571,6 +616,13 @@ export function EnhancedOnboardingWizard({
             steps={steps}
             currentStepIndex={currentStepIndex}
             completedSteps={Array.from(completedSteps)}
+            onStepClick={(stepId, stepIndex) => {
+              // Allow navigation to any step that is completed, current, or the next step
+              const step = steps[stepIndex];
+              if (step) {
+                setCurrentStep(step.id);
+              }
+            }}
           />
         </div>
 
@@ -649,18 +701,7 @@ export function EnhancedOnboardingWizard({
                     error: null,
                   });
                 }}
-              />
-            )}
-
-            {currentStep === "test_call" && (
-              <TestCallStep
-                businessId={business.id}
-                phoneNumber={phoneData.phoneNumber || "Provisioning..."}
                 businessName={business.name}
-                agentName={business.assistant_name || "Your AI Receptionist"}
-                onNext={handleTestCallComplete}
-                onBack={() => setCurrentStep("phone_verification")}
-                loading={loading}
               />
             )}
 

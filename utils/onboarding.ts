@@ -335,18 +335,10 @@ const ONBOARDING_STEPS: Omit<OnboardingStep, "completed">[] = [
     order: 3,
   },
   {
-    id: "test_call",
-    title: "Test Your Receptionist",
-    description: "Make a test call to verify everything works",
-    actionLabel: "Test Call",
-    actionUrl: "/dashboard/onboarding",
-    order: 4,
-  },
-  {
     id: "go_live",
     title: "Go Live",
     description: "Your AI receptionist is ready to receive calls!",
-    order: 5,
+    order: 4,
   },
 ];
 
@@ -378,7 +370,7 @@ const BUSINESS_INFO_SUBSTEPS: Omit<BusinessInfoSubStep, "completed">[] = [
 ];
 
 export async function getOnboardingProgress(
-  userId: string
+  userId: string,
 ): Promise<OnboardingProgress> {
   const supabase = await createClient();
 
@@ -429,9 +421,15 @@ export async function getOnboardingProgress(
     .eq("business_id", businessId)
     .maybeSingle();
 
-  // Check website training completion
-  // First check the database flag
-  let hasWebsiteTraining = !!onboardingProgress?.website_training_completed;
+  // Check website training completion (prefers new step_1_website flag)
+  // First check the database flags
+  const websiteStepCompletedFlag =
+    onboardingProgress?.step_1_website ??
+    onboardingProgress?.website_training_completed ??
+    onboardingProgress?.step_1_review ??
+    false;
+
+  let hasWebsiteTraining = !!websiteStepCompletedFlag;
 
   // If flag doesn't exist or is false, check documents directly (for backward compatibility)
   if (!hasWebsiteTraining) {
@@ -450,16 +448,20 @@ export async function getOnboardingProgress(
 
     if (hasProcessedWebsite) {
       hasWebsiteTraining = true;
-      
+
       // Auto-update the flag if document is processed but flag isn't set
       // Only try if we have the column (won't error if column doesn't exist due to graceful handling)
       try {
         await saveOnboardingProgress(businessId, {
+          step_1_website: true,
           website_training_completed: true,
         });
       } catch (error) {
         // Silent fail - column might not exist yet
-        console.warn("Could not update website_training_completed flag:", error);
+        console.warn(
+          "Could not update website_training_completed flag:",
+          error,
+        );
       }
     }
   }
@@ -474,18 +476,32 @@ export async function getOnboardingProgress(
     let completed = false;
     let subSteps: BusinessInfoSubStep[] | undefined = undefined;
 
+    const businessInfoCompleted =
+      onboardingProgress?.step_2_business_info ??
+      onboardingProgress?.step_1_review ??
+      !!(
+        business?.name &&
+        business?.industry &&
+        business?.timezone &&
+        business?.assistant_name
+      );
+
+    const phoneSetupCompleted =
+      onboardingProgress?.step_3_phone_setup ??
+      onboardingProgress?.step_2_phone_verified ??
+      !!phoneEndpoint?.phone_number;
+
+    const goLiveCompleted =
+      onboardingProgress?.step_4_go_live ??
+      onboardingProgress?.step_3_go_live ??
+      false;
+
     switch (step.id) {
       case "website_training":
         completed = hasWebsiteTraining;
         break;
       case "business_info":
-        completed = !!(
-          business?.name &&
-          business?.industry &&
-          business?.timezone &&
-          business?.assistant_name &&
-          onboardingProgress?.step_1_review
-        );
+        completed = businessInfoCompleted;
         subSteps = BUSINESS_INFO_SUBSTEPS.map((subStep) => {
           let subCompleted = false;
           switch (subStep.id) {
@@ -503,21 +519,17 @@ export async function getOnboardingProgress(
               subCompleted = !!business?.personalized_greeting;
               break;
             case "review":
-              subCompleted = onboardingProgress?.step_1_review || false;
+              subCompleted = businessInfoCompleted;
               break;
           }
           return { ...subStep, completed: subCompleted };
         });
         break;
       case "phone_verification":
-        completed =
-          !!phoneEndpoint && onboardingProgress?.step_2_phone_verified;
-        break;
-      case "test_call":
-        completed = onboardingProgress?.step_3_test_call_completed || false;
+        completed = !!phoneEndpoint && phoneSetupCompleted;
         break;
       case "go_live":
-        completed = onboardingProgress?.step_4_go_live || false;
+        completed = goLiveCompleted;
         break;
     }
 
@@ -555,7 +567,7 @@ export async function updateBusinessInfo(
     businessDescription: string;
     agentName: string;
     personalizedGreeting: string;
-  }
+  },
 ): Promise<{ error: string | null }> {
   const supabase = await createClient();
 
@@ -576,16 +588,16 @@ export async function updateBusinessInfo(
   }
 
   // Mark step 1 as complete
-  await supabase
-    .from("onboarding_progress")
-    .update({ step_1_review: true })
-    .eq("business_id", businessId);
+  await saveOnboardingProgress(businessId, {
+    step_2_business_info: true,
+    step_1_review: true, // keep legacy flag in sync for backward compatibility
+  });
 
   return { error: null };
 }
 
 export async function triggerPhoneProvisioning(
-  businessId: string
+  businessId: string,
 ): Promise<{ error: string | null }> {
   const supabase = await createClient();
 
@@ -648,21 +660,40 @@ export async function isFirstTimeUser(userId: string): Promise<boolean> {
 export async function saveOnboardingProgress(
   businessId: string,
   updates: {
+    step_1_website?: boolean;
+    step_2_business_info?: boolean;
+    step_3_phone_setup?: boolean;
+    step_4_go_live?: boolean;
     website_training_completed?: boolean;
     step_1_review?: boolean;
     step_2_phone_verified?: boolean;
-    step_3_test_call_completed?: boolean;
-    step_4_go_live?: boolean;
-    phone_provisioning_status?: "pending" | "in_progress" | "completed" | "failed";
-  }
+    step_3_go_live?: boolean;
+    phone_provisioning_status?:
+      | "pending"
+      | "in_progress"
+      | "completed"
+      | "failed";
+    phone_provisioning_error?: string | null;
+  },
 ): Promise<{ error: string | null }> {
   const supabase = await createClient();
 
-  // Build update object, excluding website_training_completed if column doesn't exist
-  const updateData: any = {
-    ...updates,
-    updated_at: new Date().toISOString(),
+  const toBool = (value: any) => value === true;
+
+  const computeCurrentStep = (flags: {
+    step_1_website: boolean;
+    step_2_business_info: boolean;
+    step_3_phone_setup: boolean;
+    step_4_go_live: boolean;
+  }) => {
+    if (!flags.step_1_website) return 1;
+    if (!flags.step_2_business_info) return 2;
+    if (!flags.step_3_phone_setup) return 3;
+    if (!flags.step_4_go_live) return 4;
+    return 4;
   };
+
+  const now = new Date().toISOString();
 
   // Get existing progress or create new
   const { data: existing } = await supabase
@@ -670,6 +701,55 @@ export async function saveOnboardingProgress(
     .select("*")
     .eq("business_id", businessId)
     .maybeSingle();
+
+  const existingFlags = {
+    step_1_website: toBool(
+      existing?.step_1_website ??
+        existing?.website_training_completed ??
+        existing?.step_1_review,
+    ),
+    step_2_business_info: toBool(
+      existing?.step_2_business_info ?? existing?.step_1_review,
+    ),
+    step_3_phone_setup: toBool(
+      existing?.step_3_phone_setup ?? existing?.step_2_phone_verified,
+    ),
+    step_4_go_live: toBool(
+      existing?.step_4_go_live ??
+        existing?.step_3_go_live ??
+        existing?.step_3_test_call_completed,
+    ),
+  };
+
+  const mergedFlags = {
+    step_1_website: toBool(
+      updates.step_1_website ?? existingFlags.step_1_website,
+    ),
+    step_2_business_info: toBool(
+      updates.step_2_business_info ?? existingFlags.step_2_business_info,
+    ),
+    step_3_phone_setup: toBool(
+      updates.step_3_phone_setup ?? existingFlags.step_3_phone_setup,
+    ),
+    step_4_go_live: toBool(
+      updates.step_4_go_live ?? existingFlags.step_4_go_live,
+    ),
+  };
+
+  const currentStep = computeCurrentStep(mergedFlags);
+
+  // Build update object, excluding website_training_completed if column doesn't exist
+  const updateData: any = {
+    updated_at: now,
+    current_step: currentStep,
+  };
+
+  // Only include keys that were explicitly provided to avoid overwriting data unintentionally
+  for (const [key, value] of Object.entries(updates)) {
+    if (value !== undefined) {
+      updateData[key] = value;
+    }
+  }
 
   if (existing) {
     // Update existing progress
@@ -685,8 +765,9 @@ export async function saveOnboardingProgress(
         error.message.includes("column") ||
         error.message.includes("schema cache")
       ) {
-        const { website_training_completed, ...updateWithoutWebsite } = updateData;
-        
+        const { website_training_completed, ...updateWithoutWebsite } =
+          updateData;
+
         // Try again without website_training_completed
         const { error: retryError } = await supabase
           .from("onboarding_progress")
@@ -699,7 +780,7 @@ export async function saveOnboardingProgress(
 
         // Log warning that column needs to be added
         console.warn(
-          "⚠️  website_training_completed column not found. Please run the migration script: scripts/migrations/add-website-training-column.sql"
+          "⚠️  website_training_completed column not found. Please run the migration script: scripts/migrations/add-website-training-column.sql",
         );
         return { error: null }; // Return success but with warning
       }
@@ -709,13 +790,25 @@ export async function saveOnboardingProgress(
   } else {
     // Create new progress record
     // Try with website_training_completed first
+    const insertData = {
+      business_id: businessId,
+      current_step: currentStep,
+      step_1_website: mergedFlags.step_1_website,
+      step_2_business_info: mergedFlags.step_2_business_info,
+      step_3_phone_setup: mergedFlags.step_3_phone_setup,
+      step_4_go_live: mergedFlags.step_4_go_live,
+      phone_provisioning_status: updates.phone_provisioning_status ?? "pending",
+      phone_provisioning_error: updates.phone_provisioning_error ?? null,
+      website_training_completed: updates.website_training_completed,
+      step_1_review: updates.step_1_review,
+      step_2_phone_verified: updates.step_2_phone_verified,
+      step_3_go_live: updates.step_3_go_live,
+      updated_at: now,
+    } as Record<string, any>;
+
     const { error } = await supabase
       .from("onboarding_progress")
-      .insert({
-        business_id: businessId,
-        current_step: 1,
-        ...updateData,
-      });
+      .insert(insertData);
 
     if (error) {
       // If error is about missing column, try without website_training_completed
@@ -724,7 +817,8 @@ export async function saveOnboardingProgress(
         error.message.includes("column") ||
         error.message.includes("schema cache")
       ) {
-        const { website_training_completed, ...insertWithoutWebsite } = updateData;
+        const { website_training_completed, ...insertWithoutWebsite } =
+          updateData;
 
         const { error: retryError } = await supabase
           .from("onboarding_progress")
@@ -739,7 +833,7 @@ export async function saveOnboardingProgress(
         }
 
         console.warn(
-          "⚠️  website_training_completed column not found. Please run the migration script: scripts/migrations/add-website-training-column.sql"
+          "⚠️  website_training_completed column not found. Please run the migration script: scripts/migrations/add-website-training-column.sql",
         );
         return { error: null };
       }
@@ -755,9 +849,10 @@ export async function saveOnboardingProgress(
  * Mark website training as completed
  */
 export async function markWebsiteTrainingComplete(
-  businessId: string
+  businessId: string,
 ): Promise<{ error: string | null }> {
   return saveOnboardingProgress(businessId, {
+    step_1_website: true,
     website_training_completed: true,
   });
 }

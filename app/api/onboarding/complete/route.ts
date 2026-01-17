@@ -251,6 +251,7 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { saveOnboardingProgress } from "@/utils/onboarding";
 
 export async function POST(req: NextRequest) {
   try {
@@ -270,7 +271,7 @@ export async function POST(req: NextRequest) {
     if (!businessId) {
       return NextResponse.json(
         { error: "Business ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -284,19 +285,15 @@ export async function POST(req: NextRequest) {
     if (!currentBusiness) {
       return NextResponse.json(
         { error: "Business not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    // 2. Mark progress as complete
-    const { error: progressError } = await supabase
-      .from("onboarding_progress")
-      .update({
-        step_3_test_call_completed: true,
-        step_4_go_live: true,
-        current_step: 4,
-      })
-      .eq("business_id", businessId);
+    // 2. Mark progress as complete for go live (step 4)
+    const { error: progressError } = await saveOnboardingProgress(businessId, {
+      step_4_go_live: true,
+      step_3_go_live: true, // legacy flag for backward compatibility
+    });
 
     if (progressError) {
       console.error("[v0] Progress update error:", progressError);
@@ -332,7 +329,7 @@ export async function POST(req: NextRequest) {
       console.error("[v0] Business update error:", businessError);
       return NextResponse.json(
         { error: "Failed to update business" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -360,10 +357,10 @@ export async function POST(req: NextRequest) {
                 team_members_count: 0,
                 period_start: new Date().toISOString(),
                 period_end: new Date(
-                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                  Date.now() + 30 * 24 * 60 * 60 * 1000,
                 ).toISOString(),
               },
-              { onConflict: "business_id" }
+              { onConflict: "business_id" },
             );
 
           if (usageError) {
@@ -395,7 +392,7 @@ export async function POST(req: NextRequest) {
         },
         {
           onConflict: "user_id,step_key",
-        }
+        },
       );
     }
 
@@ -408,7 +405,7 @@ export async function POST(req: NextRequest) {
     console.error("[v0] Error completing onboarding:", error);
     return NextResponse.json(
       { error: "Failed to complete onboarding" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

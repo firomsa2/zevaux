@@ -17,24 +17,46 @@ export async function POST(request: NextRequest) {
     if (!businessId) {
       return NextResponse.json(
         { error: "Business ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
+    }
+
+    // Check if an active phone number already exists for this business
+    // This makes the endpoint idempotent - safe to call multiple times
+    const { data: existingPhone } = await supabase
+      .from("phone_endpoints")
+      .select("phone_number, status")
+      .eq("business_id", businessId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (existingPhone?.phone_number) {
+      console.log(
+        `[Phone Provisioning] Business ${businessId} already has phone: ${existingPhone.phone_number}`,
+      );
+      return NextResponse.json({
+        status: "completed",
+        message: "Phone number already assigned",
+        phoneNumber: existingPhone.phone_number,
+        alreadyExists: true,
+      });
     }
 
     // Provision the phone number automatically
     // This replaces the previous N8N webhook trigger
     console.log(
-      `[Phone Provisioning] Request received for business ${businessId}`
+      `[Phone Provisioning] Request received for business ${businessId}`,
     );
 
-    const { phoneProvisioningService } = await import(
-      "@/lib/services/phone-provisioning"
-    );
+    const { phoneProvisioningService } =
+      await import("@/lib/services/phone-provisioning");
 
     // Run the provisioning
     const result =
       await phoneProvisioningService.provisionPhoneNumberForBusiness(
-        businessId
+        businessId,
+        undefined,
+        supabase,
       );
 
     return NextResponse.json({
@@ -46,7 +68,7 @@ export async function POST(request: NextRequest) {
     console.error("[v0] Phone request error:", error);
     return NextResponse.json(
       { error: "Failed to process phone request" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

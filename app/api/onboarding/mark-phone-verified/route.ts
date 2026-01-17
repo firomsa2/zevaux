@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!businessId) {
       return NextResponse.json(
         { error: "Missing businessId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (!finalPhoneNumber) {
       return NextResponse.json(
         { error: "No active phone number found" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +48,10 @@ export async function POST(request: NextRequest) {
       .eq("id", businessId)
       .single();
 
-    if (!businessData?.phone_main) {
+    const needsMainUpdate =
+      !businessData?.phone_main || businessData.phone_main !== finalPhoneNumber;
+
+    if (needsMainUpdate) {
       const { error: updateError } = await supabase
         .from("businesses")
         .update({
@@ -61,22 +64,21 @@ export async function POST(request: NextRequest) {
         console.error("[v0] Failed to set phone_main:", updateError);
         return NextResponse.json(
           { error: "Failed to set phone_main" },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
 
-    // Update onboarding progress
+    // Update onboarding progress (step 3)
     const result = await saveOnboardingProgress(businessId, {
       phone_provisioning_status: "completed",
-      step_2_phone_verified: true,
+      phone_provisioning_error: null,
+      step_3_phone_setup: true,
+      step_2_phone_verified: true, // legacy flag for backward compatibility
     });
 
     if (result.error) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -88,8 +90,7 @@ export async function POST(request: NextRequest) {
     console.error("[v0] Mark phone verified error:", error);
     return NextResponse.json(
       { error: "Failed to mark phone as verified" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
