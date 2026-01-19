@@ -421,87 +421,74 @@ export async function getOnboardingProgress(
     .eq("business_id", businessId)
     .maybeSingle();
 
-  // Check website training completion (prefers new step_1_website flag)
-  // First check the database flags
-  const websiteStepCompletedFlag =
-    onboardingProgress?.step_1_website ??
-    onboardingProgress?.website_training_completed ??
-    onboardingProgress?.step_1_review ??
-    false;
+  // Get business config for introScript check
+  const { data: businessConfigData } = await supabase
+    .from("business_configs")
+    .select("config")
+    .eq("business_id", businessId)
+    .maybeSingle();
 
-  let hasWebsiteTraining = !!websiteStepCompletedFlag;
-
-  // If flag doesn't exist or is false, check documents directly (for backward compatibility)
-  if (!hasWebsiteTraining) {
-    const { data: websiteDocs } = await supabase
-      .from("knowledge_base_documents")
-      .select("id, status")
-      .eq("business_id", businessId)
-      .eq("source_type", "url")
-      .limit(1);
-
-    const hasProcessedWebsite = !!(
-      websiteDocs &&
-      websiteDocs.length > 0 &&
-      websiteDocs[0].status === "processed"
-    );
-
-    if (hasProcessedWebsite) {
-      hasWebsiteTraining = true;
-
-      // Auto-update the flag if document is processed but flag isn't set
-      // Only try if we have the column (won't error if column doesn't exist due to graceful handling)
-      try {
-        await saveOnboardingProgress(businessId, {
-          step_1_website: true,
-          website_training_completed: true,
-        });
-      } catch (error) {
-        // Silent fail - column might not exist yet
-        console.warn(
-          "Could not update website_training_completed flag:",
-          error,
-        );
-      }
+  // Parse business config
+  let businessConfig: any = null;
+  if (businessConfigData?.config) {
+    try {
+      businessConfig =
+        typeof businessConfigData.config === "string"
+          ? JSON.parse(businessConfigData.config)
+          : businessConfigData.config;
+    } catch (error) {
+      console.warn("[Onboarding] Error parsing business config:", error);
     }
   }
 
-  // Check call logs for first call
-  const { count: callCount } = await supabase
-    .from("call_logs")
-    .select("*", { count: "exact", head: true })
-    .eq("business_id", businessId);
+  // STEP 1: Check website training - ONLY check step_1_website flag
+  const hasWebsiteTraining = onboardingProgress?.step_1_website === true;
+  console.log("[Onboarding] Step 1 (Website):", {
+    step_1_website: onboardingProgress?.step_1_website,
+    completed: hasWebsiteTraining,
+  });
+
+  // STEP 2: Check business info - Check businesses table fields (name, description, assistant_name)
+  const hasBusinessInfo =
+    !!(business?.name && business.name.trim()) &&
+    !!(business?.description && business.description.trim()) &&
+    !!(business?.assistant_name && business.assistant_name.trim());
+  console.log("[Onboarding] Step 2 (Business Info):", {
+    hasName: !!business?.name,
+    hasDescription: !!business?.description,
+    hasAssistantName: !!business?.assistant_name,
+    completed: hasBusinessInfo,
+  });
+
+  // STEP 3: Check phone setup - Check phone_endpoints table AND introScript in business_config
+  const hasPhoneEndpoint = !!phoneEndpoint?.phone_number;
+  const hasIntroScript = !!businessConfig?.introScript;
+  const phoneSetupCompleted = hasPhoneEndpoint && hasIntroScript;
+  console.log("[Onboarding] Step 3 (Phone Setup):", {
+    hasPhoneEndpoint,
+    phoneNumber: phoneEndpoint?.phone_number,
+    hasIntroScript,
+    introScript: businessConfig?.introScript ? "exists" : "missing",
+    completed: phoneSetupCompleted,
+  });
+
+  // STEP 4: Check go live - ONLY check step_4_go_live flag
+  const goLiveCompleted = onboardingProgress?.step_4_go_live === true;
+  console.log("[Onboarding] Step 4 (Go Live):", {
+    step_4_go_live: onboardingProgress?.step_4_go_live,
+    completed: goLiveCompleted,
+  });
 
   const steps: OnboardingStep[] = ONBOARDING_STEPS.map((step) => {
     let completed = false;
     let subSteps: BusinessInfoSubStep[] | undefined = undefined;
-
-    const businessInfoCompleted =
-      onboardingProgress?.step_2_business_info ??
-      onboardingProgress?.step_1_review ??
-      !!(
-        business?.name &&
-        business?.industry &&
-        business?.timezone &&
-        business?.assistant_name
-      );
-
-    const phoneSetupCompleted =
-      onboardingProgress?.step_3_phone_setup ??
-      onboardingProgress?.step_2_phone_verified ??
-      !!phoneEndpoint?.phone_number;
-
-    const goLiveCompleted =
-      onboardingProgress?.step_4_go_live ??
-      onboardingProgress?.step_3_go_live ??
-      false;
 
     switch (step.id) {
       case "website_training":
         completed = hasWebsiteTraining;
         break;
       case "business_info":
-        completed = businessInfoCompleted;
+        completed = hasBusinessInfo;
         subSteps = BUSINESS_INFO_SUBSTEPS.map((subStep) => {
           let subCompleted = false;
           switch (subStep.id) {
@@ -519,14 +506,14 @@ export async function getOnboardingProgress(
               subCompleted = !!business?.personalized_greeting;
               break;
             case "review":
-              subCompleted = businessInfoCompleted;
+              subCompleted = hasBusinessInfo;
               break;
           }
           return { ...subStep, completed: subCompleted };
         });
         break;
       case "phone_verification":
-        completed = !!phoneEndpoint && phoneSetupCompleted;
+        completed = phoneSetupCompleted;
         break;
       case "go_live":
         completed = goLiveCompleted;
@@ -538,6 +525,15 @@ export async function getOnboardingProgress(
 
   const completedSteps = steps.filter((s) => s.completed).length;
   const currentStep = steps.find((s) => !s.completed) || null;
+
+  console.log("[Onboarding] Summary:", {
+    completedSteps,
+    totalSteps: steps.length,
+    stepDetails: steps.map((s) => ({
+      id: s.id,
+      completed: s.completed,
+    })),
+  });
 
   return {
     steps,
@@ -591,6 +587,9 @@ export async function updateBusinessInfo(
   await saveOnboardingProgress(businessId, {
     step_2_business_info: true,
     step_1_review: true, // keep legacy flag in sync for backward compatibility
+    step_1_agent_setup: true,
+    step_1_business_details: true,
+    step_1_greeting_tone: true,
   });
 
   return { error: null };
@@ -666,6 +665,9 @@ export async function saveOnboardingProgress(
     step_4_go_live?: boolean;
     website_training_completed?: boolean;
     step_1_review?: boolean;
+    step_1_agent_setup?: boolean;
+    step_1_greeting_tone?: boolean;
+    step_1_business_details?: boolean;
     step_2_phone_verified?: boolean;
     step_3_go_live?: boolean;
     phone_provisioning_status?:
@@ -715,9 +717,8 @@ export async function saveOnboardingProgress(
       existing?.step_3_phone_setup ?? existing?.step_2_phone_verified,
     ),
     step_4_go_live: toBool(
-      existing?.step_4_go_live ??
-        existing?.step_3_go_live ??
-        existing?.step_3_test_call_completed,
+      existing?.step_4_go_live ?? existing?.step_3_go_live,
+      // existing?.step_3_test_call_completed,
     ),
   };
 
@@ -801,6 +802,9 @@ export async function saveOnboardingProgress(
       phone_provisioning_error: updates.phone_provisioning_error ?? null,
       website_training_completed: updates.website_training_completed,
       step_1_review: updates.step_1_review,
+      step_1_agent_setup: updates.step_1_agent_setup,
+      step_1_greeting_tone: updates.step_1_greeting_tone,
+      step_1_business_details: updates.step_1_business_details,
       step_2_phone_verified: updates.step_2_phone_verified,
       step_3_go_live: updates.step_3_go_live,
       updated_at: now,

@@ -125,34 +125,32 @@ export function Pricing() {
         </div>
 
         {/* Billing Toggle */}
-        <div className="flex items-center justify-center gap-4 mb-12">
-          <span
-            className={`text-sm font-medium ${!isAnnual ? "text-foreground" : "text-muted-foreground"}`}
-          >
-            Monthly
-          </span>
-          <button
-            onClick={() => setIsAnnual(!isAnnual)}
-            className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
-              isAnnual ? "bg-primary" : "bg-muted"
-            }`}
-          >
-            <span
-              className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm ${
-                isAnnual ? "translate-x-8" : "translate-x-1"
+        <div className="flex justify-center mb-12">
+          <div className="inline-flex items-center p-1 bg-muted/50 border rounded-full relative">
+            <button
+              onClick={() => setIsAnnual(false)}
+              className={`px-8 py-2.5 rounded-full text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                !isAnnual
+                  ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
+                  : "text-muted-foreground hover:text-foreground/70"
               }`}
-            />
-          </button>
-          <span
-            className={`text-sm font-medium ${isAnnual ? "text-foreground" : "text-muted-foreground"}`}
-          >
-            Annual
-          </span>
-          {isAnnual && (
-            <span className="rounded-full bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 text-xs font-semibold">
-              Save 2 months
-            </span>
-          )}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setIsAnnual(true)}
+              className={`px-8 py-2.5 rounded-full text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-2 ${
+                isAnnual
+                  ? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
+                  : "text-muted-foreground hover:text-foreground/70"
+              }`}
+            >
+              Annual
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                SAVE 20%
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Pricing Cards */}

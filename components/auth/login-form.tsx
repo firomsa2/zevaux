@@ -29,6 +29,8 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -54,53 +56,87 @@ export function LoginForm({
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>Login with your Email and Password</CardDescription>
+          <CardDescription>
+            Login with your Google account or Email
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  name="email"
-                  placeholder="m@example.com"
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <Input id="password" name="password" type="password" required />
-              </Field>
-              <Field>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Loading..." : "Login"}
-                </Button>
-              </Field>
-              <FieldSeparator className="bg-transparent">
-                Or continue with
-              </FieldSeparator>
-              <Field>
-                <div className="mb-6">
-                  <GoogleButton variant="signin" />
-                </div>
-                {error && (
-                  <FieldDescription className="text-destructive">
-                    {error}
-                  </FieldDescription>
-                )}
-                <FieldSeparator />
-                <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a href="/signup">Sign up</a>
-                </FieldDescription>
+          <div className="flex flex-col gap-4">
+            <GoogleButton variant="signin" />
 
-                <FieldDescription className="text-center">
-                  Forgot your password? <a href="/forgot-password">Reset</a>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </form>
+            {!showEmailForm ? (
+              <Button
+                variant="outline"
+                onClick={() => setShowEmailForm(true)}
+                className="w-full"
+              >
+                Continue with Email
+              </Button>
+            ) : (
+              <form
+                onSubmit={handleSubmit}
+                className="animate-in fade-in slide-in-from-top-4 duration-300"
+              >
+                <FieldGroup>
+                  <FieldSeparator className="my-4">
+                    Or continue with email
+                  </FieldSeparator>
+                  <Field>
+                    <FieldLabel htmlFor="email">Email</FieldLabel>
+                    <Input
+                      id="email"
+                      type="email"
+                      name="email"
+                      placeholder="m@example.com"
+                      required
+                      autoFocus
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                    />
+                  </Field>
+                  <Field>
+                    <Button type="submit" disabled={loading} className="w-full">
+                      {loading ? "Loading..." : "Login"}
+                    </Button>
+                  </Field>
+                </FieldGroup>
+              </form>
+            )}
+
+            {error && (
+              <div className="text-sm text-destructive text-center">
+                {error}
+              </div>
+            )}
+
+            <div className="text-center text-sm text-muted-foreground mt-2">
+              <div className="mb-2">
+                Don&apos;t have an account?{" "}
+                <a
+                  href="/signup"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Sign up
+                </a>
+              </div>
+              <div>
+                Forgot your password?{" "}
+                <a
+                  href="/forgot-password"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Reset
+                </a>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

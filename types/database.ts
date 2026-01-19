@@ -15,6 +15,7 @@ export interface Business {
   description: string | null;
   assistant_name: string | null;
   website: string | null;
+  personalized_greeting?: string | null;
 }
 
 export interface Plan {

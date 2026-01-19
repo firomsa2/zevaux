@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { Stepper } from "@/components/ui/stepper";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -448,6 +448,23 @@ export function EnhancedOnboardingWizard({
       // Mark business_info as completed
       setCompletedSteps((prev) => new Set(prev).add("business_info"));
 
+      // Update local business state to reflect changes
+      setBusiness((prev) => ({
+        ...prev,
+        name: formData.businessName,
+        industry:
+          formData.industry === "other"
+            ? formData.industryOther || "Other"
+            : formData.industry,
+        timezone: formData.timezone,
+        description: formData.businessDescription,
+        assistant_name: formData.agentName,
+        personalized_greeting: formData.personalizedGreeting,
+        escalation_number: formData.transferCallsEnabled
+          ? formData.escalationNumber
+          : null,
+      }));
+
       toast({
         title: "Success",
         description: "Business information saved",
@@ -600,26 +617,29 @@ export function EnhancedOnboardingWizard({
   };
 
   return (
-    <div className="flex justify-center p-2">
-      <div className="w-full max-w-4xl">
-        {/* Header */}
-        {/* <div className="mb-2 text-center">
-          <h1 className="text-3xl font-bold mb-1">Welcome to Zevaux</h1>
-          <p className="text-muted-foreground">
-            Let's get your AI receptionist up and running
-          </p>
+    <div className="flex justify-center p-2 pt-1 md:p-4 md:pt-0 min-h-[calc(100vh-4rem)]">
+      <div className="w-full max-w-5xl space-y-4">
+        {/* Header - Optional, can be uncommented if needed */}
+        {/* <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Setup Your Receptionist</h1> 
         </div> */}
 
         {/* Progress */}
-        <div className="mb-0">
+        <div className="w-full max-w-3xl mx-auto">
           <Stepper
             steps={steps}
             currentStepIndex={currentStepIndex}
             completedSteps={Array.from(completedSteps)}
             onStepClick={(stepId, stepIndex) => {
-              // Allow navigation to any step that is completed, current, or the next step
+              // Allow navigation to any step that is completed
+              // or the current step
               const step = steps[stepIndex];
-              if (step) {
+              // Calculate effective completion status
+              // Users can go back to completed steps
+              const isCompleted = completedSteps.has(step.id);
+              const isCurrent = step.id === currentStep;
+
+              if (isCompleted || isCurrent) {
                 setCurrentStep(step.id);
               }
             }}
@@ -628,87 +648,109 @@ export function EnhancedOnboardingWizard({
 
         {/* Error Display */}
         {error && (
-          <Card className="mb-6 border-red-200 bg-red-50">
-            <CardContent className="pt-6 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-800">{error}</p>
-            </CardContent>
-          </Card>
+          <div className="max-w-3xl mx-auto">
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="pt-6 flex gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-800">{error}</p>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Step Content */}
         {loading ? (
-          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-sm text-muted-foreground">
-              Loading onboarding progress...
+          <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border p-12 text-center">
+            <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground font-medium">
+              Loading your setup...
             </p>
           </div>
         ) : (
-          <div
-            className={
-              currentStep === "pricing"
-                ? ""
-                : "bg-white rounded-lg shadow-sm p-0"
-            }
-          >
+          <div className="animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
             {currentStep === "website_url" &&
               !completedSteps.has("website_url") && (
-                <WebsiteUrlStep
-                  businessId={business.id}
-                  onComplete={handleWebsiteUrlComplete}
-                  loading={loading}
-                />
+                <div className="max-w-3xl mx-auto">
+                  <WebsiteUrlStep
+                    businessId={business.id}
+                    onComplete={handleWebsiteUrlComplete}
+                    loading={loading}
+                  />
+                </div>
               )}
 
             {/* If website_url is completed but we're somehow on that step, redirect */}
             {currentStep === "website_url" &&
               completedSteps.has("website_url") && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">
-                    Website training already completed!
+                <div className="max-w-3xl mx-auto text-center py-12 bg-white rounded-xl shadow-sm border">
+                  <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">
+                    Website Training Complete
+                  </h3>
+                  <p className="text-muted-foreground mb-8">
+                    Your business information has been analyzed.
                   </p>
-                  <Button onClick={() => setCurrentStep("business_info")}>
+                  <Button
+                    size="lg"
+                    onClick={() => setCurrentStep("business_info")}
+                  >
                     Continue to Business Info
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               )}
 
             {currentStep === "business_info" && (
-              <BusinessInfoSubSteps
-                business={business}
-                scrapedConfig={businessConfig}
-                onComplete={handleBusinessInfoComplete}
-                onCancel={() => setCurrentStep("website_url")}
-                loading={loading}
-                error={error}
-              />
+              <div className="max-w-3xl mx-auto">
+                <BusinessInfoSubSteps
+                  business={business}
+                  scrapedConfig={businessConfig}
+                  onComplete={handleBusinessInfoComplete}
+                  onCancel={() => setCurrentStep("website_url")}
+                  loading={loading}
+                  error={error}
+                />
+              </div>
             )}
 
             {currentStep === "phone_verification" && (
-              <PhoneVerificationStep
-                businessId={business.id}
-                phoneNumber={phoneData.phoneNumber}
-                provisioningStatus={phoneData.status}
-                provisioningError={phoneData.error}
-                onNext={handlePhoneVerified}
-                onBack={() => setCurrentStep("business_info")}
-                loading={loading}
-                onRetrySuccess={(phoneNumber) => {
-                  setPhoneData({
-                    phoneNumber: phoneNumber,
-                    status: "completed",
-                    error: null,
-                  });
-                }}
-                businessName={business.name}
-              />
+              <div className="max-w-4xl mx-auto">
+                <PhoneVerificationStep
+                  businessId={business.id}
+                  phoneNumber={phoneData.phoneNumber}
+                  provisioningStatus={phoneData.status}
+                  provisioningError={phoneData.error}
+                  onNext={handlePhoneVerified}
+                  onBack={() => setCurrentStep("business_info")}
+                  loading={loading}
+                  onRetrySuccess={(phoneNumber) => {
+                    setPhoneData({
+                      phoneNumber: phoneNumber,
+                      status: "completed",
+                      error: null,
+                    });
+                  }}
+                  businessName={business.name}
+                />
+              </div>
             )}
 
             {currentStep === "pricing" && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h2 className="text-2xl font-bold mb-4">Select a Plan</h2>
+              <div className="space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
+                {/* Full width for pricing to show 3 cards */}
+                <div className="">
+                  <div className="text-center space-y-2 mb-8">
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                      Choose Your Plan
+                    </h2>
+                    <p className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto leading-relaxed">
+                      Select a plan to activate your AI receptionist. You can
+                      change this anytime.
+                    </p>
+                  </div>
+
                   {plans && Array.isArray(plans) && plans.length > 0 ? (
                     <PlansOverview
                       business={business}
@@ -716,18 +758,12 @@ export function EnhancedOnboardingWizard({
                       plans={plans}
                     />
                   ) : (
-                    <div className="text-center py-8">
-                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-                      <p className="text-sm text-muted-foreground">
-                        Loading plans...
-                      </p>
+                    <div className="text-center py-16 bg-white rounded-xl shadow-sm border">
+                      <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-primary" />
+                      <p className="text-muted-foreground">Loading plans...</p>
                     </div>
                   )}
-                  <div className="mt-6 flex justify-end">
-                    <Button onClick={handlePricingComplete} size="lg">
-                      Complete Setup
-                    </Button>
-                  </div>
+                  {/* Note: The Complete Setup button is moved to within the plans or below them if needed */}
                 </div>
               </div>
             )}
@@ -735,12 +771,14 @@ export function EnhancedOnboardingWizard({
         )}
 
         {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground mt-8">
-          Need help?{" "}
-          <a href="#" className="text-blue-600 hover:underline">
-            Contact support
-          </a>
-        </p>
+        <div className="text-center pt-8 pb-4">
+          <p className="text-sm text-muted-foreground">
+            Need help?{" "}
+            <a href="#" className="font-medium text-primary hover:underline">
+              Contact support
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

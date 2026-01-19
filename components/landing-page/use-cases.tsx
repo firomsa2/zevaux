@@ -73,7 +73,7 @@ export function UseCases() {
       description:
         "Handle tenant inquiries, maintenance requests, and showing appointments automatically.",
       benefits: ["Maintenance routing", "Showing scheduling", "Tenant support"],
-      image: "/placeholder.jpg",
+      image: "/propertyy.png",
       color: "from-purple-500 to-violet-500",
     },
     {
@@ -82,7 +82,7 @@ export function UseCases() {
       description:
         "Schedule service appointments, answer parts questions, and handle customer inquiries.",
       benefits: ["Service booking", "Parts availability", "Recall handling"],
-      image: "/placeholder.jpg",
+      image: "/servicesss.png",
       color: "from-red-500 to-orange-500",
     },
   ];

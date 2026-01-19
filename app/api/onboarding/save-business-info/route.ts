@@ -48,6 +48,9 @@ export async function POST(request: NextRequest) {
         description: formData.businessDescription,
         assistant_name: formData.agentName,
         personalized_greeting: formData.personalizedGreeting,
+        escalation_number: formData.transferCallsEnabled
+          ? formData.escalationNumber
+          : null,
       })
       .eq("id", businessId);
 
@@ -71,6 +74,16 @@ export async function POST(request: NextRequest) {
         }))
       : [];
 
+    // Format Services for storage
+    const servicesForStorage = formData.services?.length
+      ? formData.services.map((svc: any) => ({
+          name: svc.name,
+          description: svc.description,
+          price: svc.price,
+          duration: svc.duration,
+        }))
+      : [];
+
     // Ensure config is always a plain object (not string or array)
     let mergedConfig = {
       ...(typeof existingConfig?.config === "object" &&
@@ -78,6 +91,7 @@ export async function POST(request: NextRequest) {
         ? existingConfig.config
         : {}),
       faqs: faqsForStorage,
+      services: servicesForStorage,
       hours: existingConfig?.config?.hours || DEFAULT_BUSINESS_HOURS,
     };
     // If somehow config is a stringified JSON, parse it

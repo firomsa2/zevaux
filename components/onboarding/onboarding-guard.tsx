@@ -23,13 +23,26 @@ export function OnboardingGuard({
   useEffect(() => {
     const isOnboardingPage = pathname?.includes("/dashboard/onboarding") ?? false;
 
+    console.log("[OnboardingGuard] Check:", {
+      pathname,
+      completedSteps,
+      isOnboardingPage,
+      shouldRedirect: completedSteps < 3 && !isOnboardingPage,
+    });
+
     // If less than 3 steps completed and not on onboarding page, redirect
     if (completedSteps < 3 && !isOnboardingPage) {
+      console.log("[OnboardingGuard] Redirecting to /dashboard/onboarding");
       setShouldRedirect(true);
       // Use replace to avoid adding to history stack
       router.replace("/dashboard/onboarding");
     } else {
       setShouldRedirect(false);
+      if (completedSteps >= 3) {
+        console.log("[OnboardingGuard] Allowing access - 3+ steps completed");
+      } else if (isOnboardingPage) {
+        console.log("[OnboardingGuard] Allowing access - already on onboarding page");
+      }
     }
   }, [completedSteps, pathname, router]);
 

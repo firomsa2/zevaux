@@ -1901,7 +1901,7 @@ export default function Home() {
       <Navigation />
       <Hero />
       {/* <TrustBar /> */}
-      {/* <ProblemSolution /> */}
+      <ProblemSolution />
       <Features />
       <AudioDemos />
       <HowItWorks />

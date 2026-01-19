@@ -300,8 +300,14 @@ import {
   Package,
   Rocket,
   PlugZap,
+  PanelLeftClose,
+  PanelLeftOpen,
+  SidebarClose,
+  Copy,
+  Check,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { TeamSwitcher } from "@/components/team-switcher";
@@ -310,7 +316,12 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
@@ -318,6 +329,7 @@ import { NavProjects } from "./nav-projects";
 import { getUserWithBusiness } from "@/utils/supabase/user";
 import { getBusinessById } from "@/utils/supabase/business";
 import { phoneNumberService } from "@/utils/supabase/phone-numbers";
+import { Separator } from "@radix-ui/react-dropdown-menu";
 
 // Format phone number to (XXX) XXX-XXXX format
 function formatPhoneNumber(phone: string): string {
@@ -386,6 +398,12 @@ const data = {
           icon: Clock,
         },
       ],
+    },
+    {
+      title: "Integrations",
+      url: "/dashboard/integrations",
+      icon: PlugZap,
+      isActive: false,
     },
     {
       title: "Knowledge Base",
@@ -466,47 +484,41 @@ const data = {
         // },
       ],
     },
-    {
-      title: "SMS",
-      url: "/dashboard/sms",
-      icon: MessageCircle,
-      isActive: false,
-      items: [
-        // {
-        //   title: "Inbox",
-        //   url: "/dashboard/sms/inbox",
-        //   icon: MessageSquare,
-        // },
-        // {
-        //   title: "Automations",
-        //   url: "/dashboard/sms/automations",
-        //   icon: Zap,
-        // },
-        // {
-        //   title: "Templates",
-        //   url: "/dashboard/sms/templates",
-        //   icon: Files,
-        // },
-      ],
-    },
-    {
-      title: "Integrations",
-      url: "/dashboard/integrations",
-      icon: PlugZap,
-      isActive: false,
-    },
+    // {
+    //   title: "SMS",
+    //   url: "/dashboard/sms",
+    //   icon: MessageCircle,
+    //   isActive: false,
+    //   items: [
+    // {
+    //   title: "Inbox",
+    //   url: "/dashboard/sms/inbox",
+    //   icon: MessageSquare,
+    // },
+    // {
+    //   title: "Automations",
+    //   url: "/dashboard/sms/automations",
+    //   icon: Zap,
+    // },
+    // {
+    //   title: "Templates",
+    //   url: "/dashboard/sms/templates",
+    //   icon: Files,
+    // },
+    //   ],
+    // },
   ],
   projects: [
-    {
-      name: "Billing",
-      url: "/dashboard/billing",
-      icon: CreditCard,
-    },
-    {
-      name: "Account Settings",
-      url: "/dashboard/settings",
-      icon: Settings,
-    },
+    // {
+    //   name: "Billing",
+    //   url: "/dashboard/billing",
+    //   icon: CreditCard,
+    // },
+    // {
+    //   name: "Account Settings",
+    //   url: "/dashboard/settings",
+    //   icon: Settings,
+    // },
   ],
 };
 
@@ -517,6 +529,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [trialDaysRemaining, setTrialDaysRemaining] = React.useState<
     number | null
   >(null);
+  const { toggleSidebar, state } = useSidebar();
+  const [copied, setCopied] = React.useState(false);
+
+  const copyPhoneNumber = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (phoneNumber) {
+      navigator.clipboard.writeText(formatPhoneNumber(phoneNumber));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   // Calculate days remaining in trial
   const calculateTrialDaysRemaining = (
@@ -624,46 +648,104 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <div className="flex flex-col items-start">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-              <ActiveLogo className="size-4" />
-            </div>
-            <span className="font-bold text-2xl tracking-tight text-primary">
-              Zevaux
-            </span>
-          </div>
-          <div className=" w-full flex items-center justify-center">
-            <TeamSwitcher teams={teams} showLogo={false} />
-          </div>
-        </div>
+      <SidebarHeader className="pb-4">
+        <SidebarMenu>
+          <SidebarMenuItem className="flex items-center gap-2 group-data-[state=collapsed]:flex-col group-data-[state=collapsed]:gap-4">
+            <SidebarMenuButton size="lg" asChild>
+              <a href="/dashboard">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-sidebar-primary-foreground">
+                  <ActiveLogo className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-bold text-lg tracking-tight text-primary">
+                    Zevaux
+                  </span>
+                  <span className="truncate text-xs">{teams[0]?.name}</span>
+                </div>
+              </a>
+            </SidebarMenuButton>
+            <Button
+              onClick={toggleSidebar}
+              data-sidebar="trigger"
+              variant="ghost"
+              size="icon"
+              className="ml-auto h-6 w-6 shrink-0 group-data-[state=collapsed]:ml-0 group-data-[state=collapsed]:size-6"
+            >
+              <PanelLeftClose className="size-4 group-data-[state=collapsed]:hidden" />
+              <PanelLeftOpen className="size-4 hidden group-data-[state=collapsed]:block" />
+              <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
         <NavProjects projects={data.projects} />
-        {(phoneNumber || trialDaysRemaining !== null) && (
-          <div className="px-2 py-3 border-t border-sidebar-border space-y-2">
-            {trialDaysRemaining !== null && (
-              <div className="text-xs text-sidebar-foreground/60 text-center">
-                {trialDaysRemaining === 0
-                  ? "Trial ends today"
-                  : trialDaysRemaining === 1
-                    ? "1 day left in your free trial"
-                    : `${trialDaysRemaining} days left in your free trial`}
-              </div>
-            )}
-            {phoneNumber && (
-              <div className="flex items-center gap-2 text-sm text-sidebar-foreground/70">
-                <Phone className="h-4 w-4" />
-                <span className="font-medium">
-                  {formatPhoneNumber(phoneNumber)}
-                </span>
-              </div>
-            )}
-          </div>
+
+        <SidebarMenu className="gap-2">
+          {trialDaysRemaining !== null && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="lg"
+                className="group-data-[state=collapsed]:justify-center bg-amber-500/10 hover:bg-amber-500/15 text-amber-700 dark:text-amber-500 border border-amber-500/20 transition-all"
+                tooltip={`${trialDaysRemaining} days left in trial`}
+              >
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-500">
+                  <Clock className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[state=collapsed]:hidden">
+                  <span className="truncate font-semibold">Free Trial</span>
+                  <span className="truncate text-xs opacity-90">
+                    {trialDaysRemaining} days left
+                  </span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+          {phoneNumber && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="lg"
+                className="group-data-[state=collapsed]:justify-center bg-primary/5 hover:bg-primary/10 border border-primary/10 transition-all"
+                tooltip={formatPhoneNumber(phoneNumber)}
+                onClick={copyPhoneNumber}
+              >
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Phone className="size-4" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[state=collapsed]:hidden">
+                  <span className="truncate text-xs font-medium text-muted-foreground">
+                    Business Line
+                  </span>
+                  <span className="truncate font-bold text-primary">
+                    {formatPhoneNumber(phoneNumber)}
+                  </span>
+                </div>
+                <div className="ml-auto group-data-[state=collapsed]:hidden opacity-0 group-hover:opacity-100 transition-opacity">
+                  {copied ? (
+                    <Check className="size-3.5 text-green-500" />
+                  ) : (
+                    <Copy className="size-3.5 text-muted-foreground" />
+                  )}
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+        </SidebarMenu>
+
+        {user && (
+          <NavUser
+            user={{
+              name:
+                user.user_metadata?.full_name ||
+                user.email?.split("@")[0] ||
+                "User",
+              email: user.email || "",
+              avatar: user.user_metadata?.avatar_url,
+            }}
+          />
         )}
       </SidebarFooter>
       <SidebarRail />

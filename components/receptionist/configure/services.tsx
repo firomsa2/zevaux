@@ -137,7 +137,7 @@ export default function ServicesForm() {
             requiresAppointment: service.requiresAppointment !== false,
             maxParticipants: service.maxParticipants,
             notes: service.notes,
-          })
+          }),
         );
         setServices(storedServices);
       }
@@ -192,8 +192,8 @@ export default function ServicesForm() {
   const updateService = (id: string, field: keyof Service, value: any) => {
     setServices((prev) =>
       prev.map((service) =>
-        service.id === id ? { ...service, [field]: value } : service
-      )
+        service.id === id ? { ...service, [field]: value } : service,
+      ),
     );
   };
 
@@ -263,7 +263,7 @@ export default function ServicesForm() {
       // Update prompt
       const { error: promptError } = await supabase.rpc(
         "update_business_prompt_trigger",
-        { p_business_id: businessId }
+        { p_business_id: businessId },
       );
 
       if (promptError) {
@@ -523,10 +523,10 @@ export default function ServicesForm() {
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span>{service.durationMinutes} minutes</span>
                       </div>
-                      {service.price !== undefined && (
+                      {service?.price && (
                         <div className="flex items-center gap-2 text-sm">
                           <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span>${service.price.toFixed(2)}</span>
+                          <span>${service?.price}</span>
                         </div>
                       )}
                       <div className="text-sm">
@@ -569,7 +569,7 @@ export default function ServicesForm() {
                                 "maxParticipants",
                                 e.target.value
                                   ? parseInt(e.target.value)
-                                  : undefined
+                                  : undefined,
                               )
                             }
                             placeholder="Max participants"

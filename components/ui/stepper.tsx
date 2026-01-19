@@ -15,23 +15,27 @@ interface StepperProps {
   onStepClick?: (stepId: string, stepIndex: number) => void; // Optional: callback when step is clicked
 }
 
-export function Stepper({ steps, currentStepIndex, completedSteps = [], onStepClick }: StepperProps) {
+export function Stepper({
+  steps,
+  currentStepIndex,
+  completedSteps = [],
+  onStepClick,
+}: StepperProps) {
   return (
-    <nav aria-label="Progress" className="w-full mb-2 sm:mb-4">
+    <nav aria-label="Progress" className="w-full mb-6">
       <ol
         role="list"
-        className="flex w-full overflow-hidden rounded-md border border-gray-200 bg-white"
+        className="flex w-full overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm"
       >
         {steps.map((step, stepIdx) => {
           // Check if step is explicitly marked as completed, or if it's before current step
           const isExplicitlyCompleted = completedSteps.includes(step.id);
           const isBeforeCurrent = stepIdx < currentStepIndex;
           const isComplete = isExplicitlyCompleted || isBeforeCurrent;
-          
-          const status =
-            isComplete
-              ? "complete"
-              : stepIdx === currentStepIndex
+
+          const status = isComplete
+            ? "complete"
+            : stepIdx === currentStepIndex
               ? "current"
               : "upcoming";
 
@@ -57,7 +61,9 @@ export function Stepper({ steps, currentStepIndex, completedSteps = [], onStepCl
                   "py-2 min-[375px]:py-2.5 sm:py-4",
                   "text-[10px] min-[375px]:text-[12px] sm:text-sm sm:text-base",
                   "font-medium",
-                  isClickable && canNavigateToStep && "cursor-pointer hover:bg-gray-50 transition-colors"
+                  isClickable &&
+                    canNavigateToStep &&
+                    "cursor-pointer hover:bg-gray-50 transition-colors",
                 )}
               >
                 {/* Circle */}
@@ -86,7 +92,7 @@ export function Stepper({ steps, currentStepIndex, completedSteps = [], onStepCl
                     "max-w-[3.75rem] sm:max-w-none",
                     status === "current" && "text-primary",
                     status === "complete" && "text-foreground",
-                    status === "upcoming" && "text-gray-500"
+                    status === "upcoming" && "text-gray-500",
                   )}
                 >
                   {/* Mobile: first word */}

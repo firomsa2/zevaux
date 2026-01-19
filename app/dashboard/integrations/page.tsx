@@ -39,8 +39,9 @@ export default async function IntegrationsPage() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold">Integrations</h1>
-          <p className="text-text-secondary mt-2">
-            Connect your favorite tools and services to enhance your AI receptionist
+          <p className="text-muted-foreground mt-2">
+            Connect your favorite tools and services to enhance your AI
+            receptionist
           </p>
         </div>
 
