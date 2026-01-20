@@ -21,6 +21,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "@/actions/auth";
 import { GoogleButton } from "./google-button";
+import { toast, notify } from "@/lib/toast";
 
 export function LoginForm({
   className,
@@ -38,14 +39,12 @@ export function LoginForm({
 
     const formData = new FormData(event.currentTarget);
     const result = await signIn(formData);
-    console.log("Login form data:", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-    });
 
     if (result.status === "success") {
+      notify.auth.loginSuccess();
       router.push("/dashboard");
     } else {
+      notify.auth.loginError(result.status);
       setError(result.status);
     }
 

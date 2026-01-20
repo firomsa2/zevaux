@@ -20,7 +20,7 @@ export async function createBusinessForUser(
         timezone: "UTC",
         default_language: "en",
         supported_languages: ["en"],
-        tone: "professional",
+        tone: "Warm, friendly, simple, professional",
         billing_plan: "starter",
         subscription_status: "active",
       })

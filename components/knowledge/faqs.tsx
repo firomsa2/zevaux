@@ -24,7 +24,7 @@ import {
   Search,
   Filter,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Badge } from "@/components/ui/badge";
 import { addFAQ, getKnowledgeDocuments } from "@/actions/knowledge";
 
@@ -67,7 +67,6 @@ export default function FAQsForm() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const supabase = createClient();
-  const { toast } = useToast();
 
   const [faqs, setFaqs] = useState<FAQ[]>([
     {
@@ -252,11 +251,7 @@ export default function FAQsForm() {
   //   };
   const addFAQs = async () => {
     if (!newFAQ.question?.trim() || !newFAQ.answer?.trim()) {
-      toast({
-        title: "Error",
-        description: "Question and answer are required",
-        variant: "destructive",
-      });
+      toast.error("Question and answer are required");
       return;
     }
 
@@ -289,17 +284,9 @@ export default function FAQsForm() {
       // Refresh data
       await fetchFAQsData();
 
-      toast({
-        title: "Success",
-        description: "FAQ added successfully",
-        variant: "default",
-      });
+      toast.success("FAQ added successfully");
     } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      toast.error(err.message);
     } finally {
       setSaving(false);
     }
@@ -317,11 +304,7 @@ export default function FAQsForm() {
     const updatedFAQs = faqs.filter((faq) => faq.id !== id);
     setFaqs(updatedFAQs);
     saveFAQsToStorage(updatedFAQs);
-    toast({
-      title: "Success",
-      description: "FAQ removed",
-      variant: "default",
-    });
+    toast.success("FAQ removed");
   };
 
   const addTag = () => {

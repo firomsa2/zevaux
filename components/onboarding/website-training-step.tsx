@@ -17,7 +17,7 @@ import {
   Bot,
   ArrowRight,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 interface WebsiteTrainingStepProps {
@@ -36,7 +36,6 @@ export function WebsiteTrainingStep({
   const [loading, setLoading] = useState(false);
   const [continueLoading, setContinueLoading] = useState(false);
   const [trainingProgress, setTrainingProgress] = useState(0);
-  const { toast } = useToast();
   const router = useRouter();
 
   // Training checklist items state
@@ -100,10 +99,8 @@ export function WebsiteTrainingStep({
   const handleContinue = async () => {
     // Only allow continue if training is actually completed
     if (step !== "completed") {
-      toast({
-        title: "Training in Progress",
-        description: "Please wait for training to complete before continuing.",
-        variant: "default",
+      toast.info("Training in progress", {
+        description: "Please wait for training to complete.",
       });
       return;
     }
@@ -132,21 +129,14 @@ export function WebsiteTrainingStep({
           errorData.error?.includes("column") ||
           errorData.error?.includes("schema cache")
         ) {
-          toast({
-            title: "Note",
-            description:
-              "Database migration needed. Progress will be tracked via website document status. You can continue.",
-            variant: "default",
+          toast.info("Progress will be tracked via document status", {
+            description: "You can continue.",
           });
           // Still allow navigation - we'll check document status as fallback
           shouldRedirect = true;
         } else {
-          toast({
-            title: "Warning",
-            description:
-              errorData.error ||
-              "Progress may not be saved, but you can continue.",
-            variant: "default",
+          toast.warning("Progress may not be saved", {
+            description: "But you can continue.",
           });
           // Still allow navigation
           shouldRedirect = true;
@@ -154,11 +144,8 @@ export function WebsiteTrainingStep({
       }
     } catch (error) {
       console.error("Failed to mark website training complete:", error);
-      toast({
-        title: "Note",
-        description:
-          "Progress will be tracked via website document status. You can continue.",
-        variant: "default",
+      toast.info("Progress will be tracked via document status", {
+        description: "You can continue.",
       });
       // Still allow navigation - we have fallback tracking
       shouldRedirect = true;
@@ -196,16 +183,14 @@ export function WebsiteTrainingStep({
               </div>
             </div> */}
 
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">
+            <h1 className="text-xl md:text-2xl font-bold  tracking-tight">
               {step === "idle" || step === "analyzing" ? (
                 <>
-                  Train Zevaux with your{" "}
-                  <span className="text-primary">Website</span>
+                  Train Zevaux with your Website
                 </>
               ) : (
                 <>
-                  Building your{" "}
-                  <span className="text-primary">Zevaux Agent</span>
+                  Building your Zevaux Agent
                 </>
               )}
             </h1>

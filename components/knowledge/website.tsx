@@ -23,7 +23,7 @@ import {
   ExternalLink,
   RefreshCw,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Badge } from "@/components/ui/badge";
 import {
   addWebsite,
@@ -52,7 +52,6 @@ export default function WebsiteForm() {
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
   const supabase = createClient();
-  const { toast } = useToast();
 
   const [websites, setWebsites] = useState<Website[]>([
     {
@@ -165,11 +164,7 @@ export default function WebsiteForm() {
 
   const addWebsites = async () => {
     if (!newWebsite.url || !isValidUrl) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid URL",
-        variant: "destructive",
-      });
+      toast.error("Please enter a valid URL");
       return;
     }
 
@@ -206,16 +201,12 @@ export default function WebsiteForm() {
       // Refresh data
       await fetchWebsitesData();
 
-      toast({
-        title: "Success",
-        description: "Website added and being processed",
-        variant: "default",
+      toast.success("Website added", {
+        description: "Processing will begin shortly.",
       });
     } catch (err: any) {
-      toast({
-        title: "Error",
+      toast.error("Failed to add website", {
         description: err.message,
-        variant: "destructive",
       });
     } finally {
       setSaving(false);
@@ -237,16 +228,12 @@ export default function WebsiteForm() {
         )
       );
 
-      toast({
-        title: "Success",
-        description: "Website refresh initiated",
-        variant: "default",
+      toast.info("Refreshing website...", {
+        description: "Content will be re-processed.",
       });
     } catch (err: any) {
-      toast({
-        title: "Error",
+      toast.error("Failed to refresh", {
         description: err.message,
-        variant: "destructive",
       });
     }
   };
@@ -270,16 +257,10 @@ export default function WebsiteForm() {
       // Remove from local state
       setWebsites((prev) => prev.filter((w) => w.id !== websiteId));
 
-      toast({
-        title: "Success",
-        description: "Website removed successfully",
-        variant: "default",
-      });
+      toast.success("Website removed");
     } catch (err: any) {
-      toast({
-        title: "Error",
+      toast.error("Failed to remove website", {
         description: err.message,
-        variant: "destructive",
       });
     }
   };
@@ -323,11 +304,7 @@ export default function WebsiteForm() {
 
   const testWebsite = async () => {
     if (!newWebsite.url || !isValidUrl) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid URL",
-        variant: "destructive",
-      });
+      toast.error("Please enter a valid URL");
       return;
     }
 
@@ -340,24 +317,16 @@ export default function WebsiteForm() {
       const data = await response.json();
 
       if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Website is accessible and ready to import",
-          variant: "default",
+        toast.success("Website is accessible", {
+          description: "Ready to import.",
         });
       } else {
-        toast({
-          title: "Warning",
-          description: data.message || "Website might not be fully accessible",
-          variant: "destructive",
+        toast.warning("Website may not be accessible", {
+          description: data.message || "Check the URL and try again.",
         });
       }
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Could not connect to website",
-        variant: "destructive",
-      });
+      toast.error("Could not connect to website");
     } finally {
       setTesting(false);
     }

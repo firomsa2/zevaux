@@ -1,55 +1,29 @@
 "use client";
 
-import * as React from "react";
+import { toast, notify, sonnerToast } from "@/lib/toast";
 
-export type ToastProps = {
-  title?: string;
-  description?: string;
-  action?: React.ReactNode;
-  variant?: "default" | "destructive";
-};
-
-const ToastContext = React.createContext<{
-  toast: (props: ToastProps) => void;
-}>({
-  toast: () => {},
-});
-
+/**
+ * Hook for accessing toast notifications
+ * 
+ * @example
+ * const { toast, notify } = useToast();
+ * 
+ * // Simple notifications
+ * toast.success("Saved!");
+ * toast.error("Something went wrong");
+ * 
+ * // Pre-configured notifications
+ * notify.auth.loginSuccess("John");
+ * notify.crud.createSuccess("Agent");
+ * notify.clipboard.copied("Phone number");
+ */
 export function useToast() {
-  return React.useContext(ToastContext);
-}
-
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = React.useState<ToastProps[]>([]);
-
-  const toast = (props: ToastProps) => {
-    setToasts((prev) => [...prev, props]);
-    setTimeout(() => {
-      setToasts((prev) => prev.slice(1));
-    }, 3000);
+  return {
+    toast,
+    notify,
+    sonnerToast, // Direct access to sonner if needed
   };
-
-  return (
-    <ToastContext.Provider value={{ toast }}>
-      {children}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        {toasts.map((toast, index) => (
-          <div
-            key={index}
-            className={`p-4 rounded-md shadow-md border ${
-              toast.variant === "destructive"
-                ? "bg-destructive text-destructive-foreground"
-                : "bg-background text-foreground"
-            }`}
-          >
-            {toast.title && <div className="font-semibold">{toast.title}</div>}
-            {toast.description && (
-              <div className="text-sm mt-1">{toast.description}</div>
-            )}
-            {toast.action}
-          </div>
-        ))}
-      </div>
-    </ToastContext.Provider>
-  );
 }
+
+// Re-export for convenience
+export { toast, notify } from "@/lib/toast";

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Save, AlertCircle, Clock, Plus, Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast, notify } from "@/lib/toast";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import {
@@ -70,7 +70,6 @@ export default function BusinessHoursForm() {
   const [error, setError] = useState<string | null>(null);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const supabase = createClient();
-  const { toast } = useToast();
 
   const [schedule, setSchedule] = useState<Record<string, DaySchedule>>({
     monday: { enabled: true, slots: [{ open: "09:00", close: "17:00" }] },
@@ -284,20 +283,14 @@ export default function BusinessHoursForm() {
       // Trigger webhook
       await triggerPromptWebhook(businessId);
 
-      toast({
-        title: "Success",
-        description: "Business hours saved successfully",
-        variant: "default",
-      });
+      notify.settings.saved();
 
       // Trigger onboarding progress refresh
       triggerOnboardingRefresh();
     } catch (err: any) {
       setError(err.message);
-      toast({
-        title: "Error",
+      toast.error("Failed to save hours", {
         description: err.message,
-        variant: "destructive",
       });
     } finally {
       setSaving(false);

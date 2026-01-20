@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Zap, Crown, Building, Sparkles } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import type { Business, Plan } from "@/types/database";
 
 interface PlansOverviewProps {
@@ -71,7 +71,6 @@ export function PlansOverview({
   currentPlan,
   plans,
 }: PlansOverviewProps) {
-  const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
   const [isAnnual, setIsAnnual] = useState(true);
 
@@ -99,11 +98,9 @@ export function PlansOverview({
         throw new Error(data.error || "Failed to create checkout session");
       }
     } catch (error) {
-      toast({
-        title: "Error",
+      toast.error("Failed to start checkout", {
         description:
-          error instanceof Error ? error.message : "Failed to start checkout",
-        variant: "destructive",
+          error instanceof Error ? error.message : "Please try again.",
       });
     } finally {
       setLoading(null);

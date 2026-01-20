@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { Stepper } from "@/components/ui/stepper";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import {
   BusinessInfoSubSteps,
   type BusinessInfoFormData,
@@ -32,7 +32,6 @@ export function EnhancedOnboardingWizard({
   business: initialBusiness,
 }: EnhancedOnboardingWizardProps) {
   const router = useRouter();
-  const { toast } = useToast();
 
   const [business, setBusiness] = useState<Business>(initialBusiness);
   const [currentStep, setCurrentStep] = useState<OnboardingStep>("website_url");
@@ -304,10 +303,7 @@ export function EnhancedOnboardingWizard({
                   console.error("[v0] Error marking phone verified:", error);
                 }
 
-                toast({
-                  title: "Success",
-                  description: `Phone number ${data.phoneNumber} is ready!`,
-                });
+                toast.success(`Phone number ${data.phoneNumber} is ready!`);
               }
             }
           } catch (error) {
@@ -354,17 +350,10 @@ export function EnhancedOnboardingWizard({
                   }
                 }
 
-                toast({
-                  title: "Success",
-                  description: `Phone number ${data.phoneNumber} provisioned!`,
-                });
+                // toast.success(`Phone number ${data.phoneNumber} provisioned!`);
                 clearInterval(interval);
               } else if (status === "failed") {
-                toast({
-                  title: "Error",
-                  description: data.error || "Phone provisioning failed",
-                  variant: "destructive",
-                });
+                toast.error(data.error || "Phone provisioning failed");
                 clearInterval(interval);
               }
             }
@@ -377,7 +366,7 @@ export function EnhancedOnboardingWizard({
         return () => clearInterval(interval);
       }
     }
-  }, [currentStep, phoneData.status, business.id, toast]);
+  }, [currentStep, phoneData.status, business.id]);
 
   const handleWebsiteUrlComplete = async (url: string) => {
     setLoading(true);
@@ -409,10 +398,7 @@ export function EnhancedOnboardingWizard({
         // Also fetch updated config (webhook may have just written it)
         await fetchLatestBusinessConfig(business.id);
 
-        toast({
-          title: "Analysis Complete",
-          description: "We've pre-filled your business information.",
-        });
+        toast.success("We've pre-filled your business information.");
       }
 
       setCurrentStep("business_info");
@@ -465,10 +451,7 @@ export function EnhancedOnboardingWizard({
           : null,
       }));
 
-      toast({
-        title: "Success",
-        description: "Business information saved",
-      });
+      toast.success("Business information saved!");
 
       // Only trigger phone provisioning if phone doesn't already exist
       // The API endpoint is idempotent, but we avoid unnecessary calls
@@ -495,15 +478,9 @@ export function EnhancedOnboardingWizard({
 
               // Show different message if phone already existed
               if (provisionData.alreadyExists) {
-                toast({
-                  title: "Phone Ready",
-                  description: `Your phone number ${provisionData.phoneNumber} is already assigned.`,
-                });
+                toast.info(`Your phone number ${provisionData.phoneNumber} is already assigned.`);
               } else {
-                toast({
-                  title: "Success",
-                  description: `Phone number ${provisionData.phoneNumber} assigned!`,
-                });
+                toast.success(`Phone number ${provisionData.phoneNumber} assigned!`);
               }
             } else {
               // Otherwise fallback to polling
@@ -542,11 +519,7 @@ export function EnhancedOnboardingWizard({
           ? err.message
           : "Failed to complete business setup",
       );
-      toast({
-        title: "Error",
-        description: error || "Failed to save business information",
-        variant: "destructive",
-      });
+      toast.error(error || "Failed to save business information");
     } finally {
       setLoading(false);
     }
@@ -587,11 +560,7 @@ export function EnhancedOnboardingWizard({
       if (!response.ok) {
         const data = await response.json();
         console.error("[v0] Failed to mark phone verified:", data.error);
-        toast({
-          title: "Warning",
-          description: "Phone verified but progress may not have been saved",
-          variant: "destructive",
-        });
+        toast.warning("Phone verified but progress may not have been saved");
       } else {
         console.log("[v0] Phone verification saved to database");
       }
@@ -609,10 +578,7 @@ export function EnhancedOnboardingWizard({
 
   const handlePricingComplete = () => {
     // Finalize onboarding
-    toast({
-      title: "Congratulations!",
-      description: "Your AI receptionist is live and ready to take calls",
-    });
+    toast.success("Congratulations! Your AI receptionist is live and ready to take calls!");
     router.push("/dashboard");
   };
 

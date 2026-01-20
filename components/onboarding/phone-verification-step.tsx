@@ -25,7 +25,7 @@ import {
   Smartphone,
   Sparkles,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 function formatPhoneNumber(phone: string): string {
   const cleaned = phone.replace(/\D/g, "");
@@ -61,7 +61,6 @@ export function PhoneVerificationStep({
   onRetrySuccess,
   businessName,
 }: PhoneVerificationStepProps) {
-  const { toast } = useToast();
   const [retrying, setRetrying] = useState(false);
   const [testCallInput, setTestCallInput] = useState("");
   const [allowedTestNumbers, setAllowedTestNumbers] = useState<string[]>([]);
@@ -92,10 +91,7 @@ export function PhoneVerificationStep({
     if (phoneNumber) {
       navigator.clipboard.writeText(phoneNumber);
       setCopied(true);
-      toast({
-        title: "Copied!",
-        description: "Phone number copied to clipboard.",
-      });
+      toast.success("Phone number copied!");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -111,27 +107,18 @@ export function PhoneVerificationStep({
 
       if (!response.ok) {
         const data = await response.json();
-        toast({
-          title: "Error",
-          description: data.error || "Failed to retry phone provisioning",
-          variant: "destructive",
+        toast.error("Failed to retry provisioning", {
+          description: data.error || "Please try again.",
         });
       } else {
         const data = await response.json();
-        toast({
-          title: "Success",
-          description: "Phone provisioning request submitted",
-        });
+        toast.success("Phone provisioning submitted");
         if (onRetrySuccess && data.phoneNumber) {
           onRetrySuccess(data.phoneNumber);
         }
       }
     } catch {
-      toast({
-        title: "Error",
-        description: "Failed to retry phone provisioning",
-        variant: "destructive",
-      });
+      toast.error("Failed to retry phone provisioning");
     } finally {
       setRetrying(false);
     }
@@ -140,11 +127,7 @@ export function PhoneVerificationStep({
   const handleAddTestNumber = () => {
     const trimmed = testCallInput.trim();
     if (!trimmed) {
-      toast({
-        title: "Enter a number",
-        description: "Please enter a phone number to allow test calls from.",
-        variant: "destructive",
-      });
+      toast.error("Please enter a phone number");
       return;
     }
     setAllowedTestNumbers((prev) => [...prev, trimmed]);

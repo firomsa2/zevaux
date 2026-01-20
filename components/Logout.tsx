@@ -3,6 +3,7 @@ import { signOut } from "@/actions/auth";
 import { LogOut } from "lucide-react";
 import React, { useState } from "react";
 import { Button } from "./ui/button";
+import { notify } from "@/lib/toast";
 
 const Logout = () => {
   const [loading, setLoading] = useState(false);
@@ -11,6 +12,7 @@ const Logout = () => {
     event.preventDefault();
     setLoading(true);
 
+    notify.auth.logoutSuccess();
     await signOut();
 
     setLoading(false);
@@ -19,10 +21,6 @@ const Logout = () => {
   return (
     <div className="cursor-pointer">
       <form onSubmit={handleLogout}>
-        {/* <button type="submit" disabled={loading}>
-          {loading ? "Signing out..." : "Log out"}
-          <LogOut className="inline-block ml-2" />
-        </button> */}
         <Button variant="outline" type="submit" disabled={loading}>
           {loading ? "Signing out..." : "Log out"}
           <LogOut />

@@ -22,7 +22,7 @@ import {
   Shield,
   MessageSquare,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast, notify } from "@/lib/toast";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,7 +56,6 @@ export default function AISettingsForm() {
   const [error, setError] = useState<string | null>(null);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const supabase = createClient();
-  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     // Safety settings
@@ -340,17 +339,11 @@ Always be patient, even with frustrated callers. If you don't know something, be
         console.warn("Prompt update failed:", promptError);
       }
 
-      toast({
-        title: "Success",
-        description: "AI settings saved successfully",
-        variant: "default",
-      });
+      notify.settings.saved();
     } catch (err: any) {
       setError(err.message);
-      toast({
-        title: "Error",
+      toast.error("Failed to save AI settings", {
         description: err.message,
-        variant: "destructive",
       });
     } finally {
       setSaving(false);

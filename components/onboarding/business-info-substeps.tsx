@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -48,6 +48,7 @@ import {
   Phone,
 } from "lucide-react";
 import type { Business } from "@/types/database";
+import { INDUSTRIES } from "@/lib/constants";
 
 interface BusinessInfoSubStepsProps {
   business: Business;
@@ -85,21 +86,6 @@ export interface BusinessInfoFormData {
   faqs: FAQ[];
   services: Service[];
 }
-
-const INDUSTRIES = [
-  "Healthcare",
-  "Legal Services",
-  "Real Estate",
-  "Dental",
-  "Veterinary",
-  "Accounting",
-  "IT Support",
-  "Home Services",
-  "Consulting",
-  "Restaurant",
-  "Retail",
-  "Other",
-];
 
 const TIMEZONES = [
   "America/New_York",
@@ -193,11 +179,22 @@ export function BusinessInfoSubSteps({
   // Overall service edit mode (simple view vs detailed edit view)
   const [isServiceEditMode, setIsServiceEditMode] = useState(false);
 
+  // Ref for escalation number input to auto-focus
+  const escalationNumberInputRef = useRef<HTMLInputElement>(null);
+
   // Initialize form data with logic to handle scraped content
   const initializeFormData = () => {
     // Determine industry
     let industry = business.industry || "";
     let industryOther = "";
+
+    // Normalize industry casing if it matches a known industry
+    const knownIndustry = INDUSTRIES.find(
+      (i) => i.toLowerCase() === industry.toLowerCase(),
+    );
+    if (knownIndustry) {
+      industry = knownIndustry;
+    }
 
     // Check scraped industry first
     const scrapedInd = scrapedConfig?.industry;
@@ -207,9 +204,9 @@ export function BusinessInfoSubSteps({
         (i) => i.toLowerCase() === scrapedInd.toLowerCase(),
       );
       if (match) {
-        industry = match.toLowerCase();
+        industry = match;
       } else {
-        industry = "other";
+        industry = "Other";
         industryOther = scrapedInd;
       }
     } else if (
@@ -220,7 +217,7 @@ export function BusinessInfoSubSteps({
       // If it's stored as 'other', we don't know the custom text unless we stored it somewhere
       // But for this logic, assume if it's not in list, it's custom.
       industryOther = industry; // This logic might need adjustment if DB stores 'other' literally
-      industry = "other";
+      industry = "Other";
     }
 
     // Determine FAQs: Prioritize saved FAQs, otherwise suggest from services
@@ -400,7 +397,7 @@ export function BusinessInfoSubSteps({
         errors.industry = "Industry is required";
       }
       // If "Other" is selected, require the custom industry text
-      if (formData.industry === "other" && !formData.industryOther?.trim()) {
+      if (formData.industry === "Other" && !formData.industryOther?.trim()) {
         errors.industryOther = "Please specify your industry";
       }
       if (!formData.businessDescription.trim()) {
@@ -701,11 +698,11 @@ export function BusinessInfoSubSteps({
                           : "bg-slate-50 text-muted-foreground"
                       }
                     >
-                      <SelectValue placeholder="Select industry" />
+                      <SelectValue placeholder="Select Industry..." />
                     </SelectTrigger>
                     <SelectContent>
                       {INDUSTRIES.map((ind) => (
-                        <SelectItem key={ind} value={ind.toLowerCase()}>
+                        <SelectItem key={ind} value={ind}>
                           {ind}
                         </SelectItem>
                       ))}
@@ -719,7 +716,7 @@ export function BusinessInfoSubSteps({
                   )}
 
                   {/* Show text input if "Other" is selected */}
-                  {formData.industry === "other" && (
+                  {formData.industry === "Other" && (
                     <div className="mt-2 animate-in slide-in-from-top-2 fade-in duration-300">
                       <Input
                         id="industryOther"
@@ -1363,6 +1360,18 @@ export function BusinessInfoSubSteps({
                       ...prev,
                       transferCallsEnabled: checked,
                     }));
+                    
+                    // Auto-enable edit mode and focus if switch is turned ON and escalation number is empty
+                    if (checked && !formData.escalationNumber?.trim()) {
+                      setEditingFields((prev) => ({
+                        ...prev,
+                        escalationNumber: true,
+                      }));
+                      // Use setTimeout to ensure the input is rendered before focusing
+                      setTimeout(() => {
+                        escalationNumberInputRef.current?.focus();
+                      }, 100);
+                    }
                   }}
                   disabled={loading}
                 />
@@ -1399,6 +1408,7 @@ export function BusinessInfoSubSteps({
                     </Button>
                   </div>
                   <Input
+                    ref={escalationNumberInputRef}
                     id="escalationNumber"
                     name="escalationNumber"
                     value={formData.escalationNumber}
@@ -1435,7 +1445,7 @@ export function BusinessInfoSubSteps({
                 <div className="border-b pb-2">
                   <p className="text-xs text-muted-foreground mb-1">Industry</p>
                   <p className="font-medium capitalize">
-                    {formData.industry === "other"
+                    {formData.industry === "Other"
                       ? formData.industryOther || "Other"
                       : formData.industry}
                   </p>

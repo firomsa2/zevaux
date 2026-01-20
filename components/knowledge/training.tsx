@@ -26,7 +26,7 @@ import {
   FileText,
   AlertCircle,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { getKnowledgeStats } from "@/actions/knowledge";
 
 interface TestResult {
@@ -43,7 +43,6 @@ export default function TrainingForm() {
   const [error, setError] = useState<string | null>(null);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const supabase = createClient();
-  const { toast } = useToast();
 
   const [testQuestion, setTestQuestion] = useState("");
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -92,11 +91,7 @@ export default function TrainingForm() {
 
   const testQuestionAnswering = async () => {
     if (!testQuestion.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a question",
-        variant: "destructive",
-      });
+      toast.error("Please enter a question");
       return;
     }
 
@@ -129,18 +124,12 @@ export default function TrainingForm() {
       setTestResults((prev) => [newResult, ...prev]);
       setTestQuestion("");
 
-      toast({
-        title: "Success",
-        description: "Test completed successfully",
-        variant: "default",
-      });
+      toast.success("Test completed");
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "An unknown error occurred";
-      toast({
-        title: "Error",
+      toast.error("Test failed", {
         description: message,
-        variant: "destructive",
       });
     } finally {
       setTesting(false);
@@ -164,10 +153,8 @@ export default function TrainingForm() {
 
       if (!response.ok) throw new Error("Retraining failed");
 
-      toast({
-        title: "Success",
-        description: "AI model is being retrained with your knowledge base",
-        variant: "default",
+      toast.success("Retraining started", {
+        description: "AI model is being updated with your knowledge base.",
       });
 
       // Refresh stats after retraining
@@ -177,10 +164,8 @@ export default function TrainingForm() {
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "An unknown error occurred";
-      toast({
-        title: "Error",
+      toast.error("Retraining failed", {
         description: message,
-        variant: "destructive",
       });
     } finally {
       setTesting(false);

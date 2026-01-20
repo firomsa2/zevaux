@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "@/actions/auth";
+import { toast } from "@/lib/toast";
 
 export function ResetPasswordForm({
   className,
@@ -41,9 +42,16 @@ export function ResetPasswordForm({
     );
 
     if (result.status === "success") {
+      toast.success("Password reset successfully", {
+        description: "You can now sign in with your new password.",
+      });
       router.push("/login?reset=success");
     } else {
-      setError(result.status || "An unexpected error occurred.");
+      const errorMessage = result.status || "An unexpected error occurred.";
+      toast.error("Failed to reset password", {
+        description: errorMessage,
+      });
+      setError(errorMessage);
     }
     setLoading(false);
   };

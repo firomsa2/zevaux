@@ -1,4 +1,3 @@
-// lib/google-auth.ts
 import { google } from "googleapis";
 
 export const oauth2Client = new google.auth.OAuth2(

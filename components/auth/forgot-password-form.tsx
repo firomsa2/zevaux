@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { forgotPassword } from "@/actions/auth";
+import { toast } from "@/lib/toast";
 
 export function ForgotPasswordForm({
   className,
@@ -26,6 +27,8 @@ export function ForgotPasswordForm({
 }: React.ComponentProps<"div">) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [emailSent, setEmailSent] = useState<boolean>(false);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -35,9 +38,15 @@ export function ForgotPasswordForm({
     const result = await forgotPassword(formData);
 
     if (result.status === "success") {
-      alert("Password reset email sent. Please check your inbox.");
+      toast.success("Password reset email sent", {
+        description: "Please check your inbox for the reset link.",
+      });
+      setEmailSent(true);
       setError(null);
     } else {
+      toast.error("Failed to send reset email", {
+        description: result.status,
+      });
       setError(result.status);
     }
     setLoading(false);

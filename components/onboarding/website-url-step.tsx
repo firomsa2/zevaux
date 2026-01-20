@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Globe, ArrowRight, Loader2, Wand2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 
 interface WebsiteUrlStepProps {
   businessId: string;
@@ -27,7 +27,6 @@ export function WebsiteUrlStep({
 }: WebsiteUrlStepProps) {
   const [url, setUrl] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,9 +49,10 @@ export function WebsiteUrlStep({
         body: JSON.stringify({ businessId, url: formattedUrl }),
       });
       console.log("API response:", response);
-
-      if (!response.ok) {
-        throw new Error("Failed to start analysis");
+      if (response.ok) {
+        toast.success("Website analysis started successfully");
+      } else {
+        toast.error("Failed to start website analysis");
       }
 
       // We proceed immediately, letting the parent handle the transition and potential polling
@@ -60,11 +60,7 @@ export function WebsiteUrlStep({
       await onComplete(formattedUrl);
     } catch (error) {
       console.error("Error analyzing website:", error);
-      toast({
-        title: "Error",
-        description: "Failed to analyze website. Please try again or skip.",
-        variant: "destructive",
-      });
+      toast.error("Failed to analyze website. Please try again or skip.");
       // Allow user to proceed even if analysis fails?
       // Maybe not if this is the "Train" step.
     } finally {

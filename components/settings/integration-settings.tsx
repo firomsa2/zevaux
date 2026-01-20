@@ -8,7 +8,7 @@ import { UserIntegration } from "@/types/integrations";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+import { toast, notify } from "@/lib/toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +31,6 @@ export function IntegrationSettings({
 }: IntegrationSettingsProps) {
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const router = useRouter();
-  const { toast } = useToast();
 
   const isGoogleConnected = integrations?.some(
     (i) => i.provider === "google_calendar",
@@ -42,6 +41,9 @@ export function IntegrationSettings({
 
   const handleConnect = (provider: string) => {
     if (provider === "google_calendar") {
+      toast.info("Redirecting to Google Calendar authentication", {
+        description: "Redirecting to Google Calendar authentication",
+      });
       window.location.href = "/api/integrations/google/auth";
     }
   };
@@ -50,6 +52,9 @@ export function IntegrationSettings({
     if (!disconnectingId) return;
 
     try {
+      toast.info("Disconnecting integration", {
+        description: "Disconnecting integration",
+      });
       const response = await fetch("/api/integrations/disconnect", {
         method: "POST",
         headers: {
@@ -59,20 +64,20 @@ export function IntegrationSettings({
       });
 
       if (!response.ok) {
+        toast.error("Failed to disconnect", {
+          description: "Failed to disconnect",
+        });
         throw new Error("Failed to disconnect");
       }
 
-      toast({
-        title: "Disconnected",
-        description: "Integration has been disconnected successfully.",
+      toast.success("Integration disconnected", {
+        description: "The integration has been removed",
       });
 
       router.refresh();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to disconnect integration. Please try again.",
-        variant: "destructive",
+      toast.error("Failed to disconnect", {
+        description: "Please try again",
       });
     } finally {
       setDisconnectingId(null);
@@ -80,13 +85,22 @@ export function IntegrationSettings({
   };
 
   const handleIntegrationClick = (integration: any) => {
+    toast.info("Handling integration click", {
+      description: "Handling integration click",
+    });
     if (integration.comingSoon) return;
 
     if (integration.status === "connected") {
       setDisconnectingId(integration.provider);
+      toast.info("Integration is connected", {
+        description: "Integration is connected",
+      });
       return;
     }
 
+    toast.info("Connecting integration", {
+      description: "Connecting integration",
+    });
     handleConnect(integration.provider);
   };
 
@@ -163,19 +177,21 @@ export function IntegrationSettings({
       comingSoon: false,
     },
     {
-      id: "zapier",
-      name: "Zapier",
+      id: "n8n",
+      name: "n8n",
       description:
-        "Send events and call information to thousands of apps via Zapier.",
+        "Send events and call information to thousands of apps via n8n.",
       status: "disconnected",
       icon: (
-        <div className="relative">
-          <span className="font-bold text-3xl tracking-tighter">
-            <span className="text-[#FF4F00]">_</span>zapier
-          </span>
-        </div>
+        <Image
+          src="/n8n-logo.webp"
+          alt="n8n"
+          width={100}
+          height={100}
+          className="object-contain"
+        />
       ),
-      provider: "zapier",
+      provider: "n8n",
       comingSoon: true,
     },
   ];

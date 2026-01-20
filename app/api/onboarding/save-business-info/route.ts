@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // If "other" is selected, use industryOther value
     const industryValue =
-      formData.industry === "other"
+      formData.industry?.toLowerCase() === "other"
         ? formData.industryOther || "Other"
         : formData.industry;
 

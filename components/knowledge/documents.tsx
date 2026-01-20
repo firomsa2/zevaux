@@ -29,7 +29,7 @@ import {
   FileCode,
   File,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -82,7 +82,6 @@ export default function DocumentsForm() {
     {}
   );
   const supabase = createClient();
-  const { toast } = useToast();
 
   const [documents, setDocuments] = useState<Document[]>([
     {
@@ -201,16 +200,14 @@ export default function DocumentsForm() {
 
   const uploadFiles = async () => {
     if (files.length === 0) {
-      toast({
-        title: "Error",
-        description: "No files selected",
-        variant: "destructive",
-      });
+      toast.error("No files selected");
       return;
     }
 
     setUploading(true);
     setError(null);
+
+    const loadingId = toast.loading(`Uploading ${files.length} file(s)...`);
 
     try {
       for (const file of files) {
@@ -265,17 +262,15 @@ export default function DocumentsForm() {
       // Clear selected files
       setFiles([]);
 
-      toast({
-        title: "Success",
-        description: `${files.length} file(s) uploaded successfully`,
-        variant: "default",
+      toast.dismiss(loadingId);
+      toast.success(`${files.length} file(s) uploaded successfully`, {
+        description: "Documents are being processed.",
       });
     } catch (err: any) {
+      toast.dismiss(loadingId);
       setError(err.message);
-      toast({
-        title: "Error",
+      toast.error("Upload failed", {
         description: err.message,
-        variant: "destructive",
       });
     } finally {
       setUploading(false);
@@ -301,16 +296,10 @@ export default function DocumentsForm() {
       // Remove from local state
       setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
 
-      toast({
-        title: "Success",
-        description: "Document deleted successfully",
-        variant: "default",
-      });
+      toast.success("Document deleted successfully");
     } catch (err: any) {
-      toast({
-        title: "Error",
+      toast.error("Failed to delete document", {
         description: err.message,
-        variant: "destructive",
       });
     }
   };
@@ -330,16 +319,12 @@ export default function DocumentsForm() {
         )
       );
 
-      toast({
-        title: "Success",
-        description: "Document reprocessing initiated",
-        variant: "default",
+      toast.info("Reprocessing document...", {
+        description: "The document will be reprocessed shortly.",
       });
     } catch (err: any) {
-      toast({
-        title: "Error",
+      toast.error("Failed to retry processing", {
         description: err.message,
-        variant: "destructive",
       });
     }
   };
@@ -369,10 +354,8 @@ export default function DocumentsForm() {
     });
 
     if (errors.length > 0) {
-      toast({
-        title: "Warning",
+      toast.warning("Some files were skipped", {
         description: errors.join(", "),
-        variant: "destructive",
       });
     }
 
