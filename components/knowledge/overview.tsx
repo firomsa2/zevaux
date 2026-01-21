@@ -185,7 +185,7 @@ export default function KnowledgeOverview() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/knowledge/documents">
+          <Link href="/dashboard/receptionist/documents">
             <Upload className=" h-4 w-4" />
             Upload Documents
           </Link>

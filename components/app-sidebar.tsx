@@ -150,6 +150,16 @@ const data = {
           url: "/dashboard/receptionist/hours",
           icon: Clock,
         },
+        {
+          title: "Documents",
+          url: "/dashboard/receptionist/documents",
+          icon: Files,
+        },
+        {
+          title: "FAQs",
+          url: "/dashboard/receptionist/faqs",
+          icon: MessageSquare,
+        },
       ],
     },
     {
@@ -158,34 +168,34 @@ const data = {
       icon: PlugZap,
       isActive: false,
     },
-    {
-      title: "Knowledge Base",
-      url: "/dashboard/knowledge",
-      icon: Files,
-      isActive: false,
-      items: [
-        // {
-        //   title: "FAQs",
-        //   url: "/dashboard/knowledge/faqs",
-        //   icon: MessageSquare,
-        // },
-        // {
-        //   title: "Website Content",
-        //   url: "/dashboard/knowledge/website",
-        //   icon: Globe,
-        // },
-        // {
-        //   title: "Documents",
-        //   url: "/dashboard/knowledge/documents",
-        //   icon: Files,
-        // },
-        // {
-        //   title: "Training",
-        //   url: "/dashboard/knowledge/training",
-        //   icon: Zap,
-        // },
-      ],
-    },
+    // {
+    //   title: "Knowledge Base",
+    //   url: "/dashboard/knowledge",
+    //   icon: Files,
+    //   isActive: false,
+    //   items: [
+    //     // {
+    //     //   title: "FAQs",
+    //     //   url: "/dashboard/knowledge/faqs",
+    //     //   icon: MessageSquare,
+    //     // },
+    //     // {
+    //     //   title: "Website Content",
+    //     //   url: "/dashboard/knowledge/website",
+    //     //   icon: Globe,
+    //     // },
+    //     // {
+    //     //   title: "Documents",
+    //     //   url: "/dashboard/knowledge/documents",
+    //     //   icon: Files,
+    //     // },
+    //     // {
+    //     //   title: "Training",
+    //     //   url: "/dashboard/knowledge/training",
+    //     //   icon: Zap,
+    //     // },
+    //   ],
+    // },
     // {
     //   title: "Phone Numbers",
     //   url: "/dashboard/phone-numbers",

@@ -65,8 +65,165 @@ export function Hero() {
         />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 md:pt-12 pb-10 md:pb-22">
-        <div className="grid gap-12 lg:grid-cols-2 items-center">
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-16 pt-12 md:pt-12 pb-10 md:pb-22">
+        <div className="grid gap-12 lg:gap-10 lg:grid-cols-[3fr_2fr] items-center relative">
+          {/* Decorative Middle Section - Only visible on large screens */}
+          <div className="hidden lg:block absolute left-[calc(60%-1.25rem)] top-0 bottom-0 w-10 pointer-events-none">
+            {/* Elegant Vertical Gradient Divider */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-primary/30 via-secondary/20 via-primary/30 to-transparent opacity-60" />
+            
+            {/* Professional Connecting Curves - Main Flow */}
+            <svg
+              className="absolute left-1/2 top-0 bottom-0 w-full h-full -translate-x-1/2"
+              viewBox="0 0 40 800"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              preserveAspectRatio="none"
+            >
+              {/* Primary Elegant Curve - Flowing from top to bottom */}
+              <path
+                d="M20 0 C 28 120, 28 200, 20 320 C 12 440, 12 520, 20 640 C 28 720, 28 760, 20 800"
+                stroke="url(#gradient-primary)"
+                strokeWidth="1.5"
+                fill="none"
+                strokeLinecap="round"
+                className="hero-line-primary"
+                opacity="0.6"
+              />
+              
+              {/* Secondary Subtle Curve - Adds depth */}
+              <path
+                d="M20 0 C 24 100, 24 180, 20 280 C 16 380, 16 460, 20 560 C 24 660, 24 720, 20 800"
+                stroke="url(#gradient-secondary)"
+                strokeWidth="1"
+                fill="none"
+                strokeLinecap="round"
+                className="hero-line-secondary"
+                opacity="0.4"
+              />
+              
+              {/* Accent Curve - Subtle highlight */}
+              <path
+                d="M20 50 C 26 150, 26 250, 20 350 C 14 450, 14 550, 20 650 C 26 700, 26 750, 20 800"
+                stroke="url(#gradient-accent)"
+                strokeWidth="0.75"
+                fill="none"
+                strokeLinecap="round"
+                className="hero-line-accent"
+                opacity="0.3"
+              />
+              
+              <defs>
+                {/* Primary Gradient - Rich and vibrant */}
+                <linearGradient id="gradient-primary" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                  <stop offset="20%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+                  <stop offset="40%" stopColor="hsl(var(--secondary))" stopOpacity="0.5" />
+                  <stop offset="60%" stopColor="hsl(var(--primary))" stopOpacity="0.5" />
+                  <stop offset="80%" stopColor="hsl(var(--secondary))" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                </linearGradient>
+                
+                {/* Secondary Gradient - Softer complement */}
+                <linearGradient id="gradient-secondary" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="hsl(var(--secondary))" stopOpacity="0" />
+                  <stop offset="30%" stopColor="hsl(var(--secondary))" stopOpacity="0.3" />
+                  <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
+                  <stop offset="70%" stopColor="hsl(var(--secondary))" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="hsl(var(--secondary))" stopOpacity="0" />
+                </linearGradient>
+                
+                {/* Accent Gradient - Subtle highlight */}
+                <linearGradient id="gradient-accent" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                  <stop offset="25%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
+                  <stop offset="50%" stopColor="hsl(var(--secondary))" stopOpacity="0.3" />
+                  <stop offset="75%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                </linearGradient>
+                
+                {/* Glow filter for depth */}
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                  <feMerge>
+                    <feMergeNode in="coloredBlur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+            </svg>
+
+            {/* Floating Icons with Staggered Animations */}
+            <div
+              className="absolute left-1/2 -translate-x-1/2 top-[15%] text-primary/30"
+              style={{
+                animation: "hero-float 6s ease-in-out infinite",
+                animationDelay: "0s",
+              }}
+            >
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div
+              className="absolute left-1/2 -translate-x-1/2 top-[35%] text-primary/25"
+              style={{
+                animation: "hero-float 8s ease-in-out infinite",
+                animationDelay: "1.5s",
+              }}
+            >
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div
+              className="absolute left-1/2 -translate-x-1/2 top-[55%] text-secondary/30"
+              style={{
+                animation: "hero-float 7s ease-in-out infinite",
+                animationDelay: "3s",
+              }}
+            >
+              <Phone className="h-4 w-4" />
+            </div>
+            <div
+              className="absolute left-1/2 -translate-x-1/2 top-[75%] text-primary/20"
+              style={{
+                animation: "hero-float 9s ease-in-out infinite",
+                animationDelay: "4.5s",
+              }}
+            >
+              <ArrowRight className="h-5 w-5" />
+            </div>
+
+            {/* Animated Particles/Dots */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-[25%]">
+              <div
+                className="absolute w-1.5 h-1.5 rounded-full bg-primary/40"
+                style={{
+                  animation: "particle-float 4s ease-in-out infinite",
+                  animationDelay: "0s",
+                }}
+              />
+            </div>
+            <div className="absolute left-1/2 -translate-x-1/2 top-[45%]">
+              <div
+                className="absolute w-1 h-1 rounded-full bg-secondary/50"
+                style={{
+                  animation: "particle-float 5s ease-in-out infinite",
+                  animationDelay: "1s",
+                }}
+              />
+            </div>
+            <div className="absolute left-1/2 -translate-x-1/2 top-[65%]">
+              <div
+                className="absolute w-1.5 h-1.5 rounded-full bg-primary/30"
+                style={{
+                  animation: "particle-float 6s ease-in-out infinite",
+                  animationDelay: "2s",
+                }}
+              />
+            </div>
+
+            {/* Soft Glow Effect */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 h-32 w-32 rounded-full bg-primary/5 blur-2xl animate-pulse" />
+          </div>
+
           {/* Left Column - Text Content */}
           <div className="space-y-6">
             {/* Badge */}
@@ -314,7 +471,7 @@ export function Hero() {
 
       {/* Bottom Stats Bar */}
       <div className="border-t border-border bg-muted/30 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-16 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {stats.map((stat, index) => (
               <div

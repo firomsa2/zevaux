@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import DocumentsForm from "@/components/knowledge/documents";
+import DocumentsManager from "@/components/receptionist/documents-manager";
 
 export const metadata: Metadata = {
   title: "Documents | Zevaux",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function DocumentsPage() {
-  return <DocumentsForm />;
+  return <DocumentsManager />;
 }

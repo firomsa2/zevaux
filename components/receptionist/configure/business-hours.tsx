@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Save, AlertCircle, Clock, Plus, Trash2 } from "lucide-react";
+import { Loader2, Save, AlertCircle, Clock, Plus, Trash2, Globe } from "lucide-react";
 import { toast, notify } from "@/lib/toast";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -23,19 +23,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { triggerPromptWebhook } from "@/utils/webhooks";
 import { ReceptionistProgressWrapper } from "@/components/onboarding/receptionist-progress-wrapper";
 import { triggerOnboardingRefresh } from "@/utils/onboarding-refresh";
 
 const DAYS = [
-  { id: "monday", label: "Monday" },
-  { id: "tuesday", label: "Tuesday" },
-  { id: "wednesday", label: "Wednesday" },
-  { id: "thursday", label: "Thursday" },
-  { id: "friday", label: "Friday" },
-  { id: "saturday", label: "Saturday" },
-  { id: "sunday", label: "Sunday" },
+  { id: "monday", label: "Monday", short: "Mon" },
+  { id: "tuesday", label: "Tuesday", short: "Tue" },
+  { id: "wednesday", label: "Wednesday", short: "Wed" },
+  { id: "thursday", label: "Thursday", short: "Thu" },
+  { id: "friday", label: "Friday", short: "Fri" },
+  { id: "saturday", label: "Saturday", short: "Sat" },
+  { id: "sunday", label: "Sunday", short: "Sun" },
 ];
 
 const TIMEZONES = [
@@ -134,7 +135,7 @@ export default function BusinessHoursForm() {
         });
         setSchedule(storedSchedule);
       }
-      // Get business name for pronunciation
+      
       const { data: businessData } = await supabase
         .from("businesses")
         .select("*")
@@ -142,13 +143,10 @@ export default function BusinessHoursForm() {
         .single();
 
       if (businessData?.timezone) {
-        setFormData((prev) => {
-          console.log("🚀 ~ fetchBusinessData ~ prev:", prev);
-          return {
-            ...prev,
-            timezone: businessData.timezone,
-          };
-        });
+        setFormData((prev) => ({
+          ...prev,
+          timezone: businessData.timezone,
+        }));
       }
     } catch (err: any) {
       setError(err.message);
@@ -220,7 +218,7 @@ export default function BusinessHoursForm() {
     try {
       if (!businessId) throw new Error("No business ID found");
 
-      // Persist language/timezone settings to businesses table
+      // Persist timezone settings to businesses table
       const businessUpdate = {
         timezone: formData.timezone,
         updated_at: new Date().toISOString(),
@@ -299,167 +297,236 @@ export default function BusinessHoursForm() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex items-center justify-center min-h-[500px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading schedule...</p>
+        </div>
       </div>
     );
   }
 
+  const enabledDaysCount = DAYS.filter(day => schedule[day.id].enabled).length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-8">
       <ReceptionistProgressWrapper />
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Business Hours</h1>
-        <p className="text-muted-foreground">
-          Configure when your receptionist should be available
-        </p>
+      
+      {/* Header Section */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Clock className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Business Hours
+            </h1>
+            <p className="text-muted-foreground mt-1 text-base">
+              Configure when your AI receptionist should be available to handle calls
+            </p>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="border-destructive/50">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="font-medium">{error}</AlertDescription>
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="border-2 shadow-lg">
+          <CardHeader className="pb-4">
             <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
+              <div className="space-y-1.5">
+                <CardTitle className="text-2xl flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
                   Weekly Schedule
                 </CardTitle>
-                <CardDescription>
-                  Set your business hours for each day of the week
+                <CardDescription className="text-base pt-1">
+                  Set your business hours for each day of the week. Your receptionist will only be available during these times.
                 </CardDescription>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="timezone">Timezone *</Label>
-                <Select
-                  value={formData.timezone}
-                  onValueChange={(value) => handleChange("timezone", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIMEZONES.map((tz) => (
-                      <SelectItem key={tz} value={tz}>
-                        {tz}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              {DAYS.map((day) => (
-                <div key={day.id} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Switch
-                        checked={schedule[day.id].enabled}
-                        onCheckedChange={() => toggleDay(day.id)}
-                      />
-                      <Label className="font-medium cursor-pointer">
-                        {day.label}
-                      </Label>
-                    </div>
-                    {schedule[day.id].enabled && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addTimeSlot(day.id)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Time Slot
-                      </Button>
-                    )}
+          <CardContent className="space-y-6 pt-2">
+            {/* Timezone Selection */}
+            <div className="space-y-3 pb-4 border-b">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="timezone" className="text-base font-semibold">
+                  Timezone
+                </Label>
+                <Badge variant="secondary" className="text-xs">Required</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground -mt-1">
+                Select the timezone for your business location
+              </p>
+              <Select
+                value={formData.timezone}
+                onValueChange={(value) => handleChange("timezone", value)}
+              >
+                <SelectTrigger id="timezone" className="h-12 text-base max-w-md">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue />
                   </div>
-
-                  {schedule[day.id].enabled && (
-                    <div className="space-y-3 pl-10">
-                      {schedule[day.id].slots.map((slot, slotIndex) => (
-                        <div
-                          key={slotIndex}
-                          className="flex items-center gap-3"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="time"
-                              value={slot.open}
-                              onChange={(e) =>
-                                updateTimeSlot(
-                                  day.id,
-                                  slotIndex,
-                                  "open",
-                                  e.target.value
-                                )
-                              }
-                              className="w-32"
-                            />
-                            <span className="text-muted-foreground">to</span>
-                            <Input
-                              type="time"
-                              value={slot.close}
-                              onChange={(e) =>
-                                updateTimeSlot(
-                                  day.id,
-                                  slotIndex,
-                                  "close",
-                                  e.target.value
-                                )
-                              }
-                              className="w-32"
-                            />
-                          </div>
-                          {schedule[day.id].slots.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeTimeSlot(day.id, slotIndex)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!schedule[day.id].enabled && (
-                    <div className="pl-10">
-                      <p className="text-sm text-muted-foreground italic">
-                        Closed
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONES.map((tz) => (
+                    <SelectItem key={tz} value={tz}>
+                      {tz.replace(/_/g, " ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Preview */}
-            <div className="pt-6 border-t">
-              <h3 className="font-medium mb-3">Schedule Preview</h3>
-              <div className="bg-muted rounded-lg p-4">
-                <div className="space-y-2">
+            {/* Days Schedule */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-base font-semibold">Weekly Schedule</Label>
+                <Badge variant="outline" className="text-xs">
+                  {enabledDaysCount} {enabledDaysCount === 1 ? 'day' : 'days'} active
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                {DAYS.map((day) => {
+                  const daySchedule = schedule[day.id];
+                  const isWeekend = day.id === "saturday" || day.id === "sunday";
+                  
+                  return (
+                    <div
+                      key={day.id}
+                      className={`
+                        rounded-lg border-2 p-4 transition-all duration-200
+                        ${daySchedule.enabled 
+                          ? "border-primary/30 bg-primary/5" 
+                          : "border-border bg-muted/30"
+                        }
+                        ${isWeekend ? "opacity-90" : ""}
+                      `}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={daySchedule.enabled}
+                            onCheckedChange={() => toggleDay(day.id)}
+                          />
+                          <Label className="font-semibold text-base cursor-pointer">
+                            {day.label}
+                          </Label>
+                          {isWeekend && (
+                            <Badge variant="outline" className="text-xs">
+                              Weekend
+                            </Badge>
+                          )}
+                        </div>
+                        {daySchedule.enabled && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addTimeSlot(day.id)}
+                            className="h-8"
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1.5" />
+                            Add Slot
+                          </Button>
+                        )}
+                      </div>
+
+                      {daySchedule.enabled ? (
+                        <div className="space-y-2.5 pl-11">
+                          {daySchedule.slots.map((slot, slotIndex) => (
+                            <div
+                              key={slotIndex}
+                              className="flex items-center gap-3 p-2.5 rounded-md bg-background border border-border/50"
+                            >
+                              <div className="flex items-center gap-2.5 flex-1">
+                                <Input
+                                  type="time"
+                                  value={slot.open}
+                                  onChange={(e) =>
+                                    updateTimeSlot(
+                                      day.id,
+                                      slotIndex,
+                                      "open",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-32 h-9"
+                                />
+                                <span className="text-muted-foreground text-sm font-medium">to</span>
+                                <Input
+                                  type="time"
+                                  value={slot.close}
+                                  onChange={(e) =>
+                                    updateTimeSlot(
+                                      day.id,
+                                      slotIndex,
+                                      "close",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-32 h-9"
+                                />
+                              </div>
+                              {daySchedule.slots.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeTimeSlot(day.id, slotIndex)}
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="pl-11">
+                          <p className="text-sm text-muted-foreground italic">
+                            Closed
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Quick Preview */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-semibold">Quick Preview</Label>
+                <Badge variant="outline" className="text-xs">
+                  {formData.timezone.replace(/_/g, " ")}
+                </Badge>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {DAYS.map((day) => {
                     const daySchedule = schedule[day.id];
                     return (
                       <div
                         key={day.id}
-                        className="flex justify-between text-sm"
+                        className="flex justify-between items-center text-sm py-1"
                       >
-                        <span className="font-medium">{day.label}:</span>
-                        <span>
-                          {daySchedule.enabled &&
-                          daySchedule.slots.length > 0 ? (
+                        <span className="font-medium text-muted-foreground">
+                          {day.short}:
+                        </span>
+                        <span className="font-medium">
+                          {daySchedule.enabled && daySchedule.slots.length > 0 ? (
                             daySchedule.slots
                               .map((slot) => `${slot.open} - ${slot.close}`)
                               .join(", ")
@@ -475,27 +542,33 @@ export default function BusinessHoursForm() {
                 </div>
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="pt-6 border-t">
-              <div className="flex justify-end">
-                <Button type="submit" disabled={saving} size="lg">
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Hours
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
+
+        {/* Save Button */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="text-sm text-muted-foreground">
+            Changes will affect when your receptionist is available
+          </div>
+          <Button 
+            type="submit" 
+            disabled={saving} 
+            size="lg"
+            className="min-w-[140px] shadow-md hover:shadow-lg transition-shadow"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Hours
+              </>
+            )}
+          </Button>
+        </div>
       </form>
     </div>
   );

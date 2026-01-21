@@ -10,10 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Play, Pause, Volume2, Check, Loader2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Play, Pause, Volume2, Check, Loader2, Sparkles, Waves, CheckCircle2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 const REALTIME_VOICES_ORDER = [
   "alloy",
@@ -42,7 +44,7 @@ interface VoiceSample {
 interface VoiceSelectionProps {
   businessId: string;
   currentVoice?: string;
-  onVoiceSaved?: () => void; // Changed from onVoiceChange
+  onVoiceSaved?: () => void;
 }
 
 export default function VoiceSelection({
@@ -251,53 +253,113 @@ export default function VoiceSelection({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
+      <Card className="border-2 shadow-lg">
+        <CardContent className="flex items-center justify-center p-12">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading voice options...</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  return (
-    <Card className="p-6">
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Select AI Voice</h3>
-          <p className="text-sm text-muted-foreground">
-            Choose the voice for your AI receptionist
-          </p>
-        </div>
+  const currentVoiceData = voices.find(v => v.voice === currentVoice);
+  const selectedVoiceData = voices.find(v => v.voice === selectedVoice);
 
-        {/* Current Voice Display */}
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Current Voice</p>
-              <p className="text-2xl font-bold text-primary">
-                {voices.find(v => v.voice === currentVoice)?.sample_name || currentVoice}
-              </p>
-            </div>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              voices.find(v => v.voice === currentVoice)?.icon_color || "bg-primary/20"
-            }`}>
-              <Volume2 className="w-6 h-6 text-primary" />
-            </div>
+  return (
+    <Card className="border-2 shadow-lg overflow-hidden">
+      <CardHeader className=" bg-gradient-to-br from-primary/5 via-primary/3 to-transparent">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1.5">
+            <CardTitle className="text-2xl flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Volume2 className="h-5 w-5 text-primary" />
+              </div>
+              AI Voice Selection
+            </CardTitle>
+            <CardDescription className="text-base pt-1">
+              Choose the perfect voice for your AI receptionist. Listen to samples and select the one that best represents your brand.
+            </CardDescription>
           </div>
         </div>
+      </CardHeader>
+
+      <CardContent className="space-y-6 pt-0">
+        {/* Current Voice Display */}
+        {/* <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-primary/10 border-2 border-primary/20 p-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs font-medium">
+                  Current Voice
+                </Badge>
+                {currentVoice === selectedVoice && (
+                  <Badge className="text-xs bg-green-500 hover:bg-green-600">
+                    Active
+                  </Badge>
+                )}
+              </div>
+              <h3 className="text-3xl font-bold text-primary">
+                {currentVoiceData?.sample_name || currentVoice}
+              </h3>
+              {currentVoiceData && (
+                <p className="text-sm text-muted-foreground">
+                  {currentVoiceData.gender} • {currentVoiceData.best_for}
+                </p>
+              )}
+            </div>
+            <div 
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${
+                currentVoiceData?.icon_color || "bg-primary/20"
+              }`}
+            >
+              <Volume2 className="w-8 h-8 text-primary" />
+            </div>
+          </div>
+          {currentVoice === selectedVoice && (
+            <div className="absolute top-4 right-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
+                <div className="relative bg-green-500 rounded-full p-1.5">
+                  <Check className="h-3 w-3 text-white" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div> */}
+
+        {/* <Separator /> */}
 
         {/* Voice Selection Dropdown */}
-        <div className="space-y-2">
-          <Label htmlFor="voice-select">Select New Voice</Label>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="voice-select" className="text-base font-semibold">
+              Select New Voice
+            </Label>
+            <Badge variant="outline" className="text-xs">
+              {voices.length} voices available
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground -mt-1">
+            Choose a voice from the dropdown or browse the samples below
+          </p>
           <Select value={selectedVoice} onValueChange={handleVoiceSelect}>
-            <SelectTrigger id="voice-select">
+            <SelectTrigger id="voice-select" className="h-12 text-base">
               <SelectValue placeholder="Select a voice" />
             </SelectTrigger>
             <SelectContent>
               {voices.map((voice) => (
                 <SelectItem key={voice.voice} value={voice.voice}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>{voice.sample_name}</span>
+                  <div className="flex items-center justify-between w-full py-1">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium">{voice.sample_name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {voice.gender}
+                      </Badge>
+                    </div>
                     {selectedVoice === voice.voice && (
-                      <Check className="h-4 w-4 text-primary" />
+                      <Check className="h-4 w-4 text-primary ml-4" />
                     )}
                   </div>
                 </SelectItem>
@@ -306,100 +368,154 @@ export default function VoiceSelection({
           </Select>
         </div>
 
-        {/* Voice Samples Grid - 4x4 */}
-        <div className="space-y-3">
-          <Label>Listen to Samples</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            {voices.map((voice) => (
-              <div
-                key={voice.voice}
-                className={`flex flex-col p-4 rounded-lg border transition-all cursor-pointer ${
-                  selectedVoice === voice.voice
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-border hover:border-primary/50 hover:bg-accent/50"
-                }`}
-                onClick={() => handleVoiceSelect(voice.voice)}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      voice.icon_color || "bg-primary/20"
-                    }`}
-                  >
-                    <Volume2 className="w-5 h-5 text-primary" />
-                  </div>
-                  
-                  {selectedVoice === voice.voice && (
-                    <Check className="h-4 w-4 text-primary" />
+        <Separator />
+
+        {/* Voice Samples Grid */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <Label className="text-base font-semibold">Listen to Voice Samples</Label>
+          </div>
+          <p className="text-sm text-muted-foreground -mt-2">
+            Click on any voice card to select it, then use the play button to preview
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {voices.map((voice) => {
+              const isSelected = selectedVoice === voice.voice;
+              const isCurrent = currentVoice === voice.voice;
+              const isPlaying = playingVoice === voice.voice;
+
+              return (
+                <div
+                  key={voice.voice}
+                  className={`
+                    group relative flex flex-col p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer
+                    ${
+                      isSelected
+                        ? "border-primary bg-primary/5 shadow-lg scale-[1.02]"
+                        : "border-border hover:border-primary/50 hover:bg-accent/50 hover:shadow-md"
+                    }
+                    ${isCurrent && !isSelected ? "ring-2 ring-primary/30" : ""}
+                  `}
+                  onClick={() => handleVoiceSelect(voice.voice)}
+                >
+                  {/* Selection Indicator */}
+                  {isSelected && (
+                    <div className="absolute top-3 right-3">
+                      <div className="bg-primary rounded-full p-1.5 shadow-md">
+                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
+                      </div>
+                    </div>
                   )}
-                </div>
-                
-                <div className="mb-3">
-                  <div className="font-medium text-sm">{voice.sample_name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {voice.gender}
-                  </div>
-                </div>
-                
-                <div className="mt-auto space-y-2">
-                  <div className="text-xs text-muted-foreground line-clamp-2">
-                    {voice.best_for}
+
+                  {/* Current Voice Badge */}
+                  {isCurrent && (
+                    <div className="absolute top-3 left-3">
+                      <Badge className="text-xs bg-green-500 hover:bg-green-600">
+                        Active
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Voice Icon */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:scale-110 ${
+                        voice.icon_color || "bg-primary/20"
+                      }`}
+                    >
+                      <Volume2 className="w-6 h-6 text-primary" />
+                    </div>
+                    
+                    {isPlaying && (
+                      <div className="flex gap-1">
+                        <Waves className="h-4 w-4 text-primary animate-pulse" />
+                      </div>
+                    )}
                   </div>
                   
+                  {/* Voice Info */}
+                  <div className="mb-2 space-y-1">
+                    <div className="font-semibold text-base">{voice.sample_name}</div>
+                    <Badge variant="outline" className="text-xs">
+                      {voice.gender}
+                    </Badge>
+                  </div>
+                  
+                  {/* Best For */}
+                  <div className="mb-2 flex-1">
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                      {voice.best_for}
+                    </p>
+                  </div>
+                  
+                  {/* Play Button */}
                   <Button
                     size="sm"
-                    variant={playingVoice === voice.voice ? "default" : "outline"}
+                    variant={isPlaying ? "default" : "outline"}
                     onClick={(e) => {
                       e.stopPropagation();
                       playVoiceSample(voice.voice);
                     }}
-                    className="w-full"
+                    className="w-full mt-auto shadow-sm hover:shadow-md transition-shadow"
                   >
-                    {playingVoice === voice.voice ? (
+                    {isPlaying ? (
                       <>
-                        <Pause className="h-3 w-3 mr-1" />
+                        <Pause className="h-3.5 w-3.5 mr-2" />
                         Stop
                       </>
                     ) : (
                       <>
-                        <Play className="h-3 w-3 mr-1" />
+                        <Play className="h-3.5 w-3.5 mr-2" />
                         Listen
                       </>
                     )}
                   </Button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
+        <Separator />
+
         {/* Save Button */}
-        <div className="pt-4 border-t">
+        <div className="space-y-3">
           <Button
             onClick={saveVoiceSelection}
             disabled={saving || !hasChanged}
-            className="w-full"
+            className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg transition-all"
+            size="lg"
           >
             {saving ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Saving Voice Selection...
+              </>
+            ) : hasChanged ? (
+              <>
+                <Check className="mr-2 h-5 w-5" />
+                Save Voice Selection
               </>
             ) : (
-              "Save Voice Selection"
+              "No Changes to Save"
             )}
           </Button>
           
-          {!hasChanged && (
-            <p className="text-sm text-muted-foreground text-center mt-2">
-              {selectedVoice === currentVoice 
-                ? "Current voice is already selected"
-                : "Select a different voice to save changes"
-              }
+          {!hasChanged && selectedVoice !== currentVoice && (
+            <p className="text-sm text-muted-foreground text-center">
+              Select a different voice above to enable saving
             </p>
           )}
+          
+          {selectedVoice === currentVoice && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <span>This voice is already active</span>
+            </div>
+          )}
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 }

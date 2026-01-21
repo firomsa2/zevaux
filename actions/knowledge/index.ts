@@ -105,6 +105,27 @@ export async function getKnowledgeStats() {
   }
 }
 
+// Get FAQs from business_configs
+export async function getFAQs() {
+  try {
+    const businessId = await getBusinessId();
+    const supabase = createClient();
+
+    const { data: configData, error } = await (await supabase)
+      .from("business_configs")
+      .select("config")
+      .eq("business_id", businessId)
+      .single();
+
+    if (error && error.code !== "PGRST116") throw error;
+
+    const faqs = configData?.config?.faqs || [];
+    return { success: true, data: faqs };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 // Add FAQ
 export async function addFAQ(faqData: {
   question: string;
@@ -118,37 +139,148 @@ export async function addFAQ(faqData: {
     const businessId = await getBusinessId();
     const supabase = createClient();
 
-    // Create FAQ document
-    const { data: doc, error: docError } = await (
-      await supabase
-    )
-      .from("knowledge_base_documents")
-      .insert({
-        business_id: businessId,
-        title: "FAQs",
-        source_type: "manual",
-        language: faqData.language,
-        status: "pending",
-        metadata: {
-          faqs: [faqData],
-          totalFaqs: 1,
-        },
-      })
-      .select()
+    // Get existing config
+    const { data: existingConfig } = await (await supabase)
+      .from("business_configs")
+      .select("config")
+      .eq("business_id", businessId)
+      .maybeSingle();
+
+    const existingFAQs = existingConfig?.config?.faqs || [];
+    const newFAQ = {
+      id: `faq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      ...faqData,
+      createdAt: new Date().toISOString(),
+    };
+    const updatedFAQs = [...existingFAQs, newFAQ];
+
+    // Update config preserving other fields
+    const configData = {
+      business_id: businessId,
+      config: {
+        ...(existingConfig?.config || {}),
+        faqs: updatedFAQs,
+      },
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: configError } = await (await supabase)
+      .from("business_configs")
+      .upsert(configData, {
+        onConflict: "business_id",
+      });
+
+    if (configError) throw configError;
+
+    revalidatePath("/dashboard/receptionist/faqs");
+
+    return { success: true, data: newFAQ };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Update FAQ
+export async function updateFAQ(
+  id: string,
+  faqData: Partial<{
+    question: string;
+    answer: string;
+    category: string;
+    language: string;
+    priority: number;
+    tags: string[];
+  }>
+) {
+  try {
+    const businessId = await getBusinessId();
+    const supabase = createClient();
+
+    // Get existing config
+    const { data: existingConfig } = await (await supabase)
+      .from("business_configs")
+      .select("config")
+      .eq("business_id", businessId)
       .single();
 
-    if (docError) throw docError;
+    if (!existingConfig?.config) {
+      throw new Error("Config not found");
+    }
 
-    // Trigger webhook for processing
-    await triggerKnowledgeWebhook("process_faqs", {
-      businessId,
-      documentId: doc.id,
-      faqs: [faqData],
-    });
+    const existingFAQs = existingConfig.config.faqs || [];
+    const updatedFAQs = existingFAQs.map((faq: any) =>
+      faq.id === id
+        ? { ...faq, ...faqData, updatedAt: new Date().toISOString() }
+        : faq
+    );
 
-    revalidatePath("/dashboard/knowledge");
+    // Update config preserving other fields
+    const configData = {
+      business_id: businessId,
+      config: {
+        ...existingConfig.config,
+        faqs: updatedFAQs,
+      },
+      updated_at: new Date().toISOString(),
+    };
 
-    return { success: true, data: doc };
+    const { error: configError } = await (await supabase)
+      .from("business_configs")
+      .upsert(configData, {
+        onConflict: "business_id",
+      });
+
+    if (configError) throw configError;
+
+    revalidatePath("/dashboard/receptionist/faqs");
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Delete FAQ
+export async function deleteFAQ(id: string) {
+  try {
+    const businessId = await getBusinessId();
+    const supabase = createClient();
+
+    // Get existing config
+    const { data: existingConfig } = await (await supabase)
+      .from("business_configs")
+      .select("config")
+      .eq("business_id", businessId)
+      .single();
+
+    if (!existingConfig?.config) {
+      throw new Error("Config not found");
+    }
+
+    const existingFAQs = existingConfig.config.faqs || [];
+    const updatedFAQs = existingFAQs.filter((faq: any) => faq.id !== id);
+
+    // Update config preserving other fields
+    const configData = {
+      business_id: businessId,
+      config: {
+        ...existingConfig.config,
+        faqs: updatedFAQs,
+      },
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: configError } = await (await supabase)
+      .from("business_configs")
+      .upsert(configData, {
+        onConflict: "business_id",
+      });
+
+    if (configError) throw configError;
+
+    revalidatePath("/dashboard/receptionist/faqs");
+
+    return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
