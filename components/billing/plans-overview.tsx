@@ -55,13 +55,17 @@ const PLAN_META: Record<
   },
   enterprise: {
     icon: Building,
-    description: "Custom solutions for complex organizations.",
+    description:
+      "For complex or multi-location businesses needing custom solutions and advanced training.",
     popular: false,
     color: "text-slate-500",
     features_highlight: [
-      "Multiple locations",
-      "Custom AI training",
+      "Multiple locations support",
+      "Fully custom AI prompts",
+      "Advanced agent training",
       "Dedicated account manager",
+      "White-label options",
+      "Enterprise SSO & security",
     ],
   },
 };
@@ -117,9 +121,30 @@ export function PlansOverview({
     );
   }
 
-  const sortedPlans = [...plans].sort(
-    (a, b) => (a.monthly_price || 0) - (b.monthly_price || 0),
-  );
+  const displayPlans = [...plans];
+
+  // Add Enterprise plan if it doesn't exist
+  if (!displayPlans.some((p) => p.slug === "enterprise")) {
+    displayPlans.push({
+      id: "enterprise-mock",
+      slug: "enterprise",
+      name: "Enterprise",
+      // @ts-ignore - Allowing null for custom pricing display
+      monthly_price: null,
+      minutes_limit: 0, // 0 displays as "Unlimited"
+      features: {},
+      max_phone_numbers: 0,
+      max_team_members: 0,
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  const sortedPlans = displayPlans.sort((a, b) => {
+    // Treat null price (Custom) as higher than any specific price
+    const priceA = a.monthly_price === null ? 999999 : a.monthly_price;
+    const priceB = b.monthly_price === null ? 999999 : b.monthly_price;
+    return priceA - priceB;
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in-50 duration-500">

@@ -147,27 +147,39 @@ export async function getOnboardingProgress(
   });
 
   // STEP 2: Check business info - Check businesses table fields (name, description, assistant_name)
-  const hasBusinessInfo =
+  const hasBusinessInfoData =
     !!(business?.name && business.name.trim()) &&
     !!(business?.description && business.description.trim()) &&
     !!(business?.assistant_name && business.assistant_name.trim());
+
+  const hasBusinessInfo =
+    onboardingProgress?.step_2_business_info === true || hasBusinessInfoData;
+
   console.log("[Onboarding] Step 2 (Business Info):", {
     hasName: !!business?.name,
     hasDescription: !!business?.description,
     hasAssistantName: !!business?.assistant_name,
-    completed: hasBusinessInfo,
+    flag_step_2_business_info: onboardingProgress?.step_2_business_info,
+    data_completed: hasBusinessInfoData,
+    final_completed: hasBusinessInfo,
   });
 
   // STEP 3: Check phone setup - Check phone_endpoints table AND introScript in business_config
   const hasPhoneEndpoint = !!phoneEndpoint?.phone_number;
   const hasIntroScript = !!businessConfig?.introScript;
-  const phoneSetupCompleted = hasPhoneEndpoint && hasIntroScript;
+  const phoneSetupCompletedData = hasPhoneEndpoint && hasIntroScript;
+
+  const phoneSetupCompleted =
+    onboardingProgress?.step_3_phone_setup === true || phoneSetupCompletedData;
+
   console.log("[Onboarding] Step 3 (Phone Setup):", {
     hasPhoneEndpoint,
     phoneNumber: phoneEndpoint?.phone_number,
     hasIntroScript,
     introScript: businessConfig?.introScript ? "exists" : "missing",
-    completed: phoneSetupCompleted,
+    flag_step_3_phone_setup: onboardingProgress?.step_3_phone_setup,
+    data_completed: phoneSetupCompletedData,
+    final_completed: phoneSetupCompleted,
   });
 
   // STEP 4: Check go live - ONLY check step_4_go_live flag
@@ -191,20 +203,26 @@ export async function getOnboardingProgress(
           let subCompleted = false;
           switch (subStep.id) {
             case "business_details":
-              subCompleted = !!(
-                business?.name &&
-                business?.industry &&
-                business?.timezone
-              );
+              subCompleted =
+                !!(
+                  business?.name &&
+                  business?.industry &&
+                  business?.timezone
+                ) || onboardingProgress?.step_1_business_details === true;
               break;
             case "agent_setup":
-              subCompleted = !!business?.assistant_name;
+              subCompleted =
+                !!business?.assistant_name ||
+                onboardingProgress?.step_1_agent_setup === true;
               break;
             case "greeting_tone":
-              subCompleted = !!business?.personalized_greeting;
+              subCompleted =
+                !!business?.personalized_greeting ||
+                onboardingProgress?.step_1_greeting_tone === true;
               break;
             case "review":
-              subCompleted = hasBusinessInfo;
+              subCompleted =
+                hasBusinessInfo || onboardingProgress?.step_1_review === true;
               break;
           }
           return { ...subStep, completed: subCompleted };

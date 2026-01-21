@@ -17,10 +17,10 @@ export function Pricing() {
 
   const plans = [
     {
-      name: "Professional",
+      name: "Starter",
       icon: Zap,
-      monthlyPrice: 49,
-      annualPrice: 39,
+      monthlyPrice: 47.99,
+      annualPrice: 37.99,
       description:
         "Perfect for small businesses and solo owners who need calls answered when they can't.",
       popular: false,
@@ -40,10 +40,10 @@ export function Pricing() {
       href: "/signup",
     },
     {
-      name: "Scale",
+      name: "Pro",
       icon: Crown,
-      monthlyPrice: 149,
-      annualPrice: 119,
+      monthlyPrice: 97.99,
+      annualPrice: 87.99,
       description:
         "For growing businesses that want Zevaux to answer calls and take action on their behalf.",
       popular: true,

@@ -130,6 +130,9 @@ export async function POST(request: NextRequest) {
     const { error: progressError } = await saveOnboardingProgress(businessId, {
       step_2_business_info: true,
       step_1_review: true, // legacy flag for backward compatibility
+      step_1_agent_setup: true,
+      step_1_business_details: true,
+      step_1_greeting_tone: true,
     });
 
     if (progressError) {
