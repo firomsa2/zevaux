@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { maybeStartTrialForBusiness } from "@/lib/billing";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,6 +35,10 @@ export async function POST(request: NextRequest) {
       console.log(
         `[Phone Provisioning] Business ${businessId} already has phone: ${existingPhone.phone_number}`,
       );
+
+      // Ensure trial is started once the business has an active number
+      await maybeStartTrialForBusiness(businessId);
+
       return NextResponse.json({
         status: "completed",
         message: "Phone number already assigned",
@@ -58,6 +63,9 @@ export async function POST(request: NextRequest) {
         undefined,
         supabase,
       );
+
+    // Start 7-day trial once the business has an operational phone number
+    await maybeStartTrialForBusiness(businessId);
 
     return NextResponse.json({
       status: "completed",

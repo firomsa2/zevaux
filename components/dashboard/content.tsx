@@ -37,10 +37,12 @@ export function DashboardContent({
   user,
   data,
   onboardingProgress,
+  trialDaysLeft,
 }: {
   user: any;
   data: DashboardData;
   onboardingProgress: OnboardingProgress;
+  trialDaysLeft?: number | null;
 }) {
   const {
     isSetupComplete,
@@ -83,6 +85,32 @@ export function DashboardContent({
           </Link>
         )}
       </div>
+
+      {/* Trial banner */}
+      {typeof trialDaysLeft === "number" && trialDaysLeft >= 0 && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/20">
+          <CardHeader className="py-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Clock className="w-4 h-4 text-amber-600" />
+              {trialDaysLeft === 0
+                ? "Your free trial ends today"
+                : `Your free trial ends in ${trialDaysLeft} day${
+                    trialDaysLeft === 1 ? "" : "s"
+                  }`}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Keep your AI receptionist running by choosing a plan on the{" "}
+              <Link
+                href="/dashboard/billing"
+                className="font-medium text-amber-700 underline underline-offset-2"
+              >
+                billing page
+              </Link>
+              .
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       {/* CHANGED: Show celebration when onboarding is complete and not dismissed */}
       {onboardingProgress.isComplete &&

@@ -131,6 +131,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { getBillingStateForUser } from "@/lib/billing";
 import { createClient } from "@/utils/supabase/server";
 import { Bell, HelpCircle } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -182,6 +183,15 @@ export default async function DashboardLayout({
   }
 
   // const [isCelebrationDismissed, setIsCelebrationDismissed] = useState(false)
+
+  // Resolve billing state to enforce trial / subscription gating at layout level.
+  const billingState = await getBillingStateForUser(user.id);
+
+  // If trial has expired and there's no active subscription, we still allow access
+  // to the dashboard shell but expect individual pages/APIs to enforce billing
+  // (e.g. redirect to /dashboard/billing or return 402). This avoids hard-coding
+  // a redirect here that might conflict with onboarding flows.
+  // You can tighten this later if you want a global redirect from the layout.
 
   return (
     <OnboardingGuard completedSteps={completedSteps}>

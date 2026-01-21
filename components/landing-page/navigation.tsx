@@ -84,8 +84,8 @@ export function Navigation() {
         border-b transition-all duration-300
         ${
           isScrolled
-            ? "border-border bg-background/95 backdrop-blur-xl shadow-sm"
-            : "border-transparent bg-background/80 backdrop-blur-md"
+            ? "border-white/10 bg-[var(--rich-bg)]/90 backdrop-blur-xl shadow-sm supports-[backdrop-filter]:bg-[var(--rich-bg)]/60"
+            : "border-transparent bg-[var(--rich-bg)]"
         }
       `}
     >
@@ -96,7 +96,7 @@ export function Navigation() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary transition-transform duration-300 group-hover:scale-105">
               <Phone className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl sm:text-2xl font-bold text-foreground">
+            <span className="text-xl sm:text-2xl font-bold text-white">
               Zevaux
             </span>
           </Link>
@@ -110,8 +110,8 @@ export function Navigation() {
                   href={link.href}
                   className="
                     relative text-sm font-medium
-                    text-muted-foreground
-                    hover:text-foreground
+                    text-white/70
+                    hover:text-white
                     transition-colors
                     after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0
                     after:bg-primary after:transition-all after:duration-300
@@ -135,7 +135,7 @@ export function Navigation() {
                         href="/dashboard"
                         className="
                           flex items-center gap-2 text-sm font-medium
-                          text-muted-foreground hover:text-foreground
+                          text-white/70 hover:text-white
                           transition-colors
                         "
                       >
@@ -147,7 +147,7 @@ export function Navigation() {
                         variant="ghost"
                         size="sm"
                         onClick={handleLogout}
-                        className="hover:bg-muted"
+                        className="text-white hover:text-white hover:bg-white/10"
                       >
                         <LogOut className="h-4 w-4 mr-2" />
                         Logout
@@ -155,14 +155,19 @@ export function Navigation() {
                     </>
                   ) : (
                     <>
-                      <Button variant="ghost" size="sm" asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="text-white hover:text-white hover:bg-white/10"
+                      >
                         <Link href="/login">Sign In</Link>
                       </Button>
 
                       <Button
                         size="sm"
                         asChild
-                        className="shadow-md hover:shadow-lg transition-shadow"
+                        className="bg-white text-[var(--rich-bg)] hover:bg-white/90 shadow-md hover:shadow-lg transition-all"
                       >
                         <Link
                           href="/signup"
@@ -186,7 +191,7 @@ export function Navigation() {
               size="sm"
               variant="ghost"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2"
+              className="p-2 text-white hover:text-white hover:bg-white/10"
             >
               {isMenuOpen ? (
                 <X className="h-5 w-5" />
@@ -206,7 +211,7 @@ export function Navigation() {
           ${isMenuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"}
         `}
       >
-        <div className="border-t border-border bg-background px-4 py-4">
+        <div className="border-t border-white/10 bg-[var(--rich-bg)] px-4 py-4">
           <div className="space-y-1">
             {links.map((link) => (
               <Link
@@ -214,8 +219,8 @@ export function Navigation() {
                 href={link.href}
                 className="
                   block py-3 px-4 rounded-lg text-base font-medium
-                  text-muted-foreground
-                  hover:text-foreground hover:bg-muted
+                  text-white/70
+                  hover:text-white hover:bg-white/10
                   transition-colors
                 "
                 onClick={() => setIsMenuOpen(false)}
@@ -225,7 +230,7 @@ export function Navigation() {
             ))}
           </div>
 
-          <div className="pt-4 mt-4 space-y-2 border-t border-border">
+          <div className="pt-4 mt-4 space-y-2 border-t border-white/10">
             {!isLoading && (
               <>
                 {user ? (
@@ -233,7 +238,7 @@ export function Navigation() {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="w-full justify-start"
+                      className="w-full justify-start bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white"
                       asChild
                     >
                       <Link href="/dashboard">
@@ -245,7 +250,7 @@ export function Navigation() {
                     <Button
                       variant="ghost"
                       size="lg"
-                      className="w-full justify-start text-muted-foreground"
+                      className="w-full justify-start text-white/70 hover:text-white hover:bg-white/10"
                       onClick={() => {
                         handleLogout();
                         setIsMenuOpen(false);
@@ -260,13 +265,17 @@ export function Navigation() {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="w-full"
+                      className="w-full bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white"
                       asChild
                     >
                       <Link href="/login">Sign In</Link>
                     </Button>
 
-                    <Button size="lg" className="w-full" asChild>
+                    <Button
+                      size="lg"
+                      className="w-full bg-white text-[var(--rich-bg)] hover:bg-white/90"
+                      asChild
+                    >
                       <Link href="/signup" className="flex items-center gap-2">
                         Start Free Trial
                         <ArrowRight className="h-4 w-4" />

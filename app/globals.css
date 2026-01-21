@@ -67,6 +67,50 @@
   --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+
+  /* RICH DARK THEME BASE (Deep Violet/Navy) */
+  --rich-bg: oklch(0.15 0.05 265);      /* Deep midnight violet */
+  --rich-surface: oklch(0.20 0.06 265); /* Slightly lighter surface */
+  
+  /* VIBRANT ACCENTS */
+  --neon-violet: oklch(0.65 0.25 290);  /* Electric Purple */
+  --neon-cyan: oklch(0.75 0.18 220);    /* Cyber Blue */
+  --neon-rose: oklch(0.65 0.22 350);    /* Hot Pink */
+  /* Animation definitions */
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-bounce-slow: bounce 3s infinite;
+  --animate-gradient-x: gradient-x 15s ease infinite;
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
+  --animate-fade-in-up: fade-in-up 0.5s ease-out forwards;
+  --animate-slide-in-right: slide-in-right 0.5s ease-out forwards;
+  --animate-slide-in-left: slide-in-left 0.5s ease-out forwards;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+@keyframes gradient-x {
+  0% { background-size: 200% 200%; background-position: 0% 50%; }
+  50% { background-size: 200% 200%; background-position: 100% 50%; }
+  100% { background-size: 200% 200%; background-position: 0% 50%; }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .dark {
@@ -419,6 +463,24 @@
 
 .animate-glow-pulse {
   animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* Subtle hero gradient shift */
+@keyframes hero-gradient-shift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.animate-hero-gradient {
+  background-size: 200% 200%;
+  animation: hero-gradient-shift 18s ease-in-out infinite;
 }
 
 /* ===== UTILITY CLASSES ===== */

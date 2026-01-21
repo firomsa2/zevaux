@@ -47,11 +47,14 @@ export function SubscriptionCard({
       const response = await fetch("/api/stripe/checkout/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessId, planId: "pro" }),
+        body: JSON.stringify({
+          businessId,
+          planSlug: plan?.slug ?? "pro",
+        }),
       });
       const data = await response.json();
-      if (data.session_id) {
-        window.location.href = `https://checkout.stripe.com/pay/${data.session_id}`;
+      if (data.url) {
+        window.location.href = data.url;
       }
     } catch (error) {
       console.error("Error:", error);

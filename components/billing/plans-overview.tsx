@@ -83,7 +83,6 @@ export function PlansOverview({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessId: business.id,
-          planId: planId,
           planSlug: plan?.slug,
           interval: isAnnual ? "year" : "month",
         }),
@@ -91,9 +90,9 @@ export function PlansOverview({
 
       const data = await response.json();
 
-      if (data.session_id) {
+      if (data.url) {
         // Redirect to Stripe checkout
-        window.location.href = `https://checkout.stripe.com/pay/${data.session_id}`;
+        window.location.href = data.url;
       } else {
         throw new Error(data.error || "Failed to create checkout session");
       }

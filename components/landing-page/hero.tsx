@@ -43,213 +43,73 @@ export function Hero() {
   }, [stats.length]);
 
   return (
-    <section className="relative overflow-hidden">
-      {/* Background with gradient and animated elements */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/10" />
-        <div className="absolute top-20 right-1/4 h-72 w-72 rounded-full bg-primary/10 blur-3xl animate-pulse" />
+    <section className="relative overflow-hidden bg-[var(--rich-bg)] text-white">
+      {/* Deep Aurora Background */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        {/* Top Left Glow (Cyan) - Increased Opacity */}
+        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-[radial-gradient(circle,var(--neon-cyan)_0%,transparent_70%)] blur-[120px] opacity-30 animate-pulse-slow" />
+
+        {/* Bottom Right Glow (Violet) - Increased Opacity */}
         <div
-          className="absolute bottom-20 left-1/4 h-96 w-96 rounded-full bg-secondary/10 blur-3xl animate-pulse"
+          className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-[radial-gradient(circle,var(--neon-violet)_0%,transparent_70%)] blur-[120px] opacity-35 animate-pulse-slow"
           style={{ animationDelay: "2s" }}
         />
+
+        {/* Center/Accent Glow (Rose) - Increased Opacity */}
+        <div className="absolute top-[30%] left-[30%] w-[40vw] h-[40vw] rounded-full bg-[radial-gradient(circle,var(--neon-rose)_0%,transparent_70%)] blur-[150px] opacity-25 animate-float" />
+
+        {/* Noise overlay for texture */}
+        <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+
+        {/* Grid pattern overlay */}
         <div
-          className="absolute top-1/2 left-1/2 h-64 w-64 rounded-full bg-accent/10 blur-3xl animate-pulse"
-          style={{ animationDelay: "4s" }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-            backgroundSize: "40px 40px",
+            backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
+            backgroundSize: "60px 60px",
           }}
         />
       </div>
 
-      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-16 pt-12 md:pt-12 pb-10 md:pb-22">
-        <div className="grid gap-12 lg:gap-10 lg:grid-cols-[3fr_2fr] items-center relative">
-          {/* Decorative Middle Section - Only visible on large screens */}
-          <div className="hidden lg:block absolute left-[calc(60%-1.25rem)] top-0 bottom-0 w-10 pointer-events-none">
-            {/* Elegant Vertical Gradient Divider */}
-            <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-primary/30 via-secondary/20 via-primary/30 to-transparent opacity-60" />
-            
-            {/* Professional Connecting Curves - Main Flow */}
-            <svg
-              className="absolute left-1/2 top-0 bottom-0 w-full h-full -translate-x-1/2"
-              viewBox="0 0 40 800"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              preserveAspectRatio="none"
-            >
-              {/* Primary Elegant Curve - Flowing from top to bottom */}
-              <path
-                d="M20 0 C 28 120, 28 200, 20 320 C 12 440, 12 520, 20 640 C 28 720, 28 760, 20 800"
-                stroke="url(#gradient-primary)"
-                strokeWidth="1.5"
-                fill="none"
-                strokeLinecap="round"
-                className="hero-line-primary"
-                opacity="0.6"
-              />
-              
-              {/* Secondary Subtle Curve - Adds depth */}
-              <path
-                d="M20 0 C 24 100, 24 180, 20 280 C 16 380, 16 460, 20 560 C 24 660, 24 720, 20 800"
-                stroke="url(#gradient-secondary)"
-                strokeWidth="1"
-                fill="none"
-                strokeLinecap="round"
-                className="hero-line-secondary"
-                opacity="0.4"
-              />
-              
-              {/* Accent Curve - Subtle highlight */}
-              <path
-                d="M20 50 C 26 150, 26 250, 20 350 C 14 450, 14 550, 20 650 C 26 700, 26 750, 20 800"
-                stroke="url(#gradient-accent)"
-                strokeWidth="0.75"
-                fill="none"
-                strokeLinecap="round"
-                className="hero-line-accent"
-                opacity="0.3"
-              />
-              
-              <defs>
-                {/* Primary Gradient - Rich and vibrant */}
-                <linearGradient id="gradient-primary" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-                  <stop offset="20%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
-                  <stop offset="40%" stopColor="hsl(var(--secondary))" stopOpacity="0.5" />
-                  <stop offset="60%" stopColor="hsl(var(--primary))" stopOpacity="0.5" />
-                  <stop offset="80%" stopColor="hsl(var(--secondary))" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-                </linearGradient>
-                
-                {/* Secondary Gradient - Softer complement */}
-                <linearGradient id="gradient-secondary" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="hsl(var(--secondary))" stopOpacity="0" />
-                  <stop offset="30%" stopColor="hsl(var(--secondary))" stopOpacity="0.3" />
-                  <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-                  <stop offset="70%" stopColor="hsl(var(--secondary))" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="hsl(var(--secondary))" stopOpacity="0" />
-                </linearGradient>
-                
-                {/* Accent Gradient - Subtle highlight */}
-                <linearGradient id="gradient-accent" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-                  <stop offset="25%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
-                  <stop offset="50%" stopColor="hsl(var(--secondary))" stopOpacity="0.3" />
-                  <stop offset="75%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-                </linearGradient>
-                
-                {/* Glow filter for depth */}
-                <filter id="glow">
-                  <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                  <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-            </svg>
-
-            {/* Floating Icons with Staggered Animations */}
-            <div
-              className="absolute left-1/2 -translate-x-1/2 top-[15%] text-primary/30"
-              style={{
-                animation: "hero-float 6s ease-in-out infinite",
-                animationDelay: "0s",
-              }}
-            >
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div
-              className="absolute left-1/2 -translate-x-1/2 top-[35%] text-primary/25"
-              style={{
-                animation: "hero-float 8s ease-in-out infinite",
-                animationDelay: "1.5s",
-              }}
-            >
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <div
-              className="absolute left-1/2 -translate-x-1/2 top-[55%] text-secondary/30"
-              style={{
-                animation: "hero-float 7s ease-in-out infinite",
-                animationDelay: "3s",
-              }}
-            >
-              <Phone className="h-4 w-4" />
-            </div>
-            <div
-              className="absolute left-1/2 -translate-x-1/2 top-[75%] text-primary/20"
-              style={{
-                animation: "hero-float 9s ease-in-out infinite",
-                animationDelay: "4.5s",
-              }}
-            >
-              <ArrowRight className="h-5 w-5" />
-            </div>
-
-            {/* Animated Particles/Dots */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-[25%]">
-              <div
-                className="absolute w-1.5 h-1.5 rounded-full bg-primary/40"
-                style={{
-                  animation: "particle-float 4s ease-in-out infinite",
-                  animationDelay: "0s",
-                }}
-              />
-            </div>
-            <div className="absolute left-1/2 -translate-x-1/2 top-[45%]">
-              <div
-                className="absolute w-1 h-1 rounded-full bg-secondary/50"
-                style={{
-                  animation: "particle-float 5s ease-in-out infinite",
-                  animationDelay: "1s",
-                }}
-              />
-            </div>
-            <div className="absolute left-1/2 -translate-x-1/2 top-[65%]">
-              <div
-                className="absolute w-1.5 h-1.5 rounded-full bg-primary/30"
-                style={{
-                  animation: "particle-float 6s ease-in-out infinite",
-                  animationDelay: "2s",
-                }}
-              />
-            </div>
-
-            {/* Soft Glow Effect */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 h-32 w-32 rounded-full bg-primary/5 blur-2xl animate-pulse" />
-          </div>
-
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-16 pt-16 md:pt-24 pb-16 md:pb-32">
+        <div className="grid gap-12 lg:gap-16 lg:grid-cols-[1.1fr_0.9fr] items-center relative">
           {/* Left Column - Text Content */}
-          <div className="space-y-6">
+          <div className="space-y-8 relative z-10">
             {/* Badge */}
-            <div className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-1 backdrop-blur-sm animate-fade-in">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--neon-violet)]/30 bg-[var(--neon-violet)]/10 px-3 py-1.5 backdrop-blur-md shadow-[0_0_15px_-5px_var(--neon-violet)] animate-fade-in group hover:bg-[var(--neon-violet)]/20 transition-colors">
+              <Sparkles className="h-4 w-4 text-[var(--neon-violet)] fill-[var(--neon-violet)]/20" />
+              <span className="text-sm font-medium text-[var(--neon-violet)] tracking-wide">
                 AI-Powered • Available 24/7
               </span>
-              <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-                NEW
+              <span className="rounded-full bg-[var(--neon-violet)] px-2 py-0.5 text-[10px] uppercase font-bold text-white shadow-sm">
+                New
               </span>
             </div>
 
             {/* Headline */}
-            <div className="space-y-2 animate-fade-in-up">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            <div className="space-y-4 animate-fade-in-up">
+              <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl leading-[1.1]">
                 <span className="block">Never Miss Another</span>
-                <span className="block bg-gradient-to-r from-primary via-primary/80 to-secondary bg-clip-text text-transparent">
+                <span className="block bg-clip-text text-transparent bg-gradient-to-r from-[var(--neon-cyan)] via-white to-[var(--neon-violet)] animate-gradient-x pb-2">
                   Business Call
                 </span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-xl">
+              <p className="text-xl text-white/70 max-w-xl leading-relaxed">
                 Zevaux is your AI voice receptionist that answers every call,
                 qualifies leads, and books appointments—
-                <span className="text-foreground font-medium">
+                <span className="text-white font-semibold relative inline-block">
                   sounding perfectly human
+                  <svg
+                    className="absolute w-full h-2 bottom-0 left-0 text-[var(--neon-cyan)] opacity-40 -z-10"
+                    viewBox="0 0 100 20"
+                    preserveAspectRatio="none"
+                  >
+                    <path
+                      d="M0 10 Q 50 20 100 10"
+                      stroke="currentColor"
+                      fill="none"
+                    />
+                  </svg>
                 </span>
                 .
               </p>
@@ -257,51 +117,52 @@ export function Hero() {
 
             {/* Benefits List */}
             <ul
-              className="space-y-2 animate-fade-in-up"
+              className="space-y-4 animate-fade-in-up"
               style={{ animationDelay: "0.1s" }}
             >
               {benefits.map((benefit, index) => (
                 <li
                   key={benefit}
-                  className="flex items-center gap-3 text-foreground"
+                  className="flex items-center gap-3 text-white/90"
                   style={{ animationDelay: `${0.1 * index}s` }}
                 >
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--neon-cyan)]/10 border border-[var(--neon-cyan)]/20 shadow-[0_0_10px_-4px_var(--neon-cyan)]">
+                    <CheckCircle2 className="h-4 w-4 text-[var(--neon-cyan)]" />
                   </div>
-                  <span>{benefit}</span>
+                  <span className="text-lg font-light">{benefit}</span>
                 </li>
               ))}
             </ul>
 
             {/* CTA Buttons */}
             <div
-              className="flex flex-col gap-2 sm:flex-row animate-fade-in-up"
+              className="flex flex-col sm:flex-row gap-4 pt-4 animate-fade-in-up"
               style={{ animationDelay: "0.2s" }}
             >
               <Button
                 size="lg"
-                className="group relative overflow-hidden bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                className="group relative overflow-hidden bg-white text-[var(--rich-bg)] hover:bg-white/90 px-8 py-7 text-lg font-bold shadow-[0_0_20px_-5px_var(--neon-cyan)] hover:shadow-[0_0_30px_-5px_var(--neon-cyan)] transition-all duration-300 hover:-translate-y-1 rounded-2xl"
                 asChild
               >
                 <Link href="/signup" className="flex items-center gap-2">
-                  Start Free Trial
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  <span className="relative z-10">Start Free Trial</span>
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1 relative z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-cyan)]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="group bg-background/50 backdrop-blur-sm border-border hover:bg-background hover:border-primary/30 px-8 py-6 text-lg transition-all duration-300"
+                className="group glass bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white px-8 py-7 text-lg rounded-2xl backdrop-blur-md transition-all duration-300"
               >
-                <Play className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                <Play className="h-5 w-5 mr-3 fill-white/20 group-hover:fill-white/100 transition-all" />
                 Hear Live Demo
               </Button>
             </div>
 
             {/* Trust Indicators */}
             <div
-              className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground animate-fade-in-up"
+              className="flex flex-wrap items-center gap-8 text-sm text-white/50 pt-4 animate-fade-in-up"
               style={{ animationDelay: "0.3s" }}
             >
               <div className="flex items-center gap-2">
@@ -309,157 +170,214 @@ export function Hero() {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                      className="h-4 w-4 fill-[#FCD34D] text-[#FCD34D]"
                     />
                   ))}
                 </div>
-                <span className="font-medium text-foreground">
-                  4.9/5 Rating
-                </span>
+                <span className="font-medium text-white/80">4.9/5 Rating</span>
               </div>
+              <div className="w-px h-4 bg-white/10" />
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
+                <Shield className="h-4 w-4 text-[var(--neon-cyan)]" />
                 <span>Enterprise Security</span>
               </div>
+              <div className="w-px h-4 bg-white/10" />
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
+                <Clock className="h-4 w-4 text-[var(--neon-cyan)]" />
                 <span>5-Minute Setup</span>
               </div>
             </div>
 
-            <p
-              className="text-xs text-muted-foreground animate-fade-in-up"
-              style={{ animationDelay: "0.4s" }}
-            >
+            <p className="text-xs text-white/30 pt-2">
               ✓ No credit card required • 7-day free trial • Cancel anytime
             </p>
           </div>
 
-          {/* Right Column - Interactive Demo */}
+          {/* Right Column - Interactive Demo & Visuals */}
           <div
-            className="relative animate-fade-in-up"
+            className="relative perspective-1000 animate-fade-in-up"
             style={{ animationDelay: "0.2s" }}
           >
-            <div className="relative mx-auto max-w-sm">
-              {/* Main Phone Mockup */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-secondary/20 to-primary/20 blur-3xl scale-110 animate-pulse" />
+            {/* Abstract connecting lines behind phone - Subtle Tech feel */}
+            <svg
+              className="absolute inset-0 w-full h-full -z-10 opacity-30 pointer-events-none"
+              viewBox="0 0 400 600"
+            >
+              <path
+                d="M 200 100 C 300 100 350 300 350 300"
+                stroke="url(#lineGrad1)"
+                fill="none"
+                strokeWidth="2"
+                strokeDasharray="10 10"
+                className="animate-pulse-slow"
+              />
+              <path
+                d="M 200 100 C 100 100 50 300 50 300"
+                stroke="url(#lineGrad2)"
+                fill="none"
+                strokeWidth="2"
+                strokeDasharray="10 10"
+                className="animate-pulse-slow"
+                style={{ animationDelay: "1s" }}
+              />
+              <defs>
+                <linearGradient id="lineGrad1" x1="0" y1="0" x2="1" y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor="var(--neon-cyan)"
+                    stopOpacity="0"
+                  />
+                  <stop
+                    offset="50%"
+                    stopColor="var(--neon-cyan)"
+                    stopOpacity="1"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--neon-cyan)"
+                    stopOpacity="0"
+                  />
+                </linearGradient>
+                <linearGradient id="lineGrad2" x1="0" y1="0" x2="1" y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor="var(--neon-violet)"
+                    stopOpacity="0"
+                  />
+                  <stop
+                    offset="50%"
+                    stopColor="var(--neon-violet)"
+                    stopOpacity="1"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="var(--neon-violet)"
+                    stopOpacity="0"
+                  />
+                </linearGradient>
+              </defs>
+            </svg>
 
-                {/* Phone Frame */}
-                <div className="relative rounded-[3rem] border-6 border-gray-900 bg-gray-900 p-2 shadow-2xl dark:border-gray-700">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 h-6 w-1/3 bg-gray-900 dark:bg-gray-700 rounded-b-2xl z-10" />
+            <div className="relative mx-auto max-w-[340px] transform rotate-y-[-5deg] rotate-x-[5deg] hover:rotate-0 transition-transform duration-700 ease-out-expo">
+              {/* Glow behind phone */}
+              <div className="absolute inset-4 bg-[var(--neon-violet)] opacity-40 blur-3xl animate-pulse" />
 
-                  {/* Screen */}
-                  <div className="rounded-[2.5rem] bg-gradient-to-br from-primary via-primary/90 to-secondary overflow-hidden aspect-[9/15]">
-                    <div className="h-full flex flex-col p-6 pt-6">
-                      {/* Status Bar */}
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-white/40 animate-pulse" />
-                          <span className="text-xs text-white/80">
-                            Zevaux AI
-                          </span>
+              {/* Phone Frame */}
+              <div className="relative rounded-[3rem] border border-white/10 bg-[var(--rich-surface)] p-2 shadow-2xl ring-1 ring-white/20 backdrop-blur-2xl">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-6 w-1/3 bg-black/50 rounded-b-2xl z-10 backdrop-blur-md" />
+
+                {/* Screen */}
+                <div className="rounded-[2.5rem] bg-[var(--rich-bg)] overflow-hidden aspect-[9/18] relative">
+                  {/* Screen Gradient Mesh */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[var(--neon-violet)]/20 via-transparent to-[var(--neon-cyan)]/20" />
+
+                  {/* Content Container */}
+                  <div className="h-full flex flex-col p-6 pt-10 relative z-10">
+                    {/* Top Bar */}
+                    <div className="flex justify-between items-center text-[10px] font-medium text-white/60 mb-8">
+                      <span>Zevaux v2.0</span>
+                      <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                        <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                      </div>
+                    </div>
+
+                    {/* Main Call UI */}
+                    <div className="flex-1 flex flex-col items-center justify-center">
+                      <div className="relative mb-6 group cursor-pointer">
+                        <div className="absolute inset-0 bg-[var(--neon-cyan)] rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
+                        <div className="relative h-24 w-24 rounded-full border border-white/10 bg-white/5 flex items-center justify-center shadow-inner">
+                          <Phone className="h-10 w-10 text-white fill-white/20 animate-pulse" />
                         </div>
-                        <span className="text-xs text-white/80">Now</span>
+                        <div className="absolute -right-2 -top-2 h-8 w-8 rounded-full bg-[var(--neon-cyan)] flex items-center justify-center border-2 border-[var(--rich-bg)] animate-bounce-slow">
+                          <Sparkles className="h-4 w-4 text-[var(--rich-bg)]" />
+                        </div>
                       </div>
 
-                      {/* Active Call Display */}
-                      <div className="flex-1 flex flex-col items-center justify-center text-center">
-                        <div className="relative mb-4">
-                          <div className="h-20 w-20 rounded-full bg-white/20 flex items-center justify-center">
-                            <Phone className="h-10 w-10 text-white" />
-                          </div>
-                          <div className="absolute inset-0 rounded-full bg-white/30 animate-ping" />
-                        </div>
-                        <h3 className="text-xl font-bold text-white mb-1">
-                          Incoming Call
-                        </h3>
-                        <p className="text-sm text-white/80 mb-6">
-                          +1 (555) 123-4567
-                        </p>
+                      <h3 className="text-xl font-bold text-white mb-1">
+                        Incoming Call
+                      </h3>
+                      <p className="text-sm text-[var(--neon-cyan)] mb-8 font-mono">
+                        +1 (555) 123-4567
+                      </p>
 
-                        {/* Live Transcript */}
-                        <div className="w-full space-y-3 text-left bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
-                          <div className="flex items-start gap-2">
-                            <Users className="h-4 w-4 text-white/70 mt-0.5 flex-shrink-0" />
-                            <p className="text-xs text-white/90">
-                              &ldquo;Hi, I&apos;d like to book an appointment
-                              for Thursday...&rdquo;
-                            </p>
+                      {/* Transcription Bubble */}
+                      <div className="space-y-3 w-full">
+                        <div className="bg-white/5 border border-white/5 rounded-2xl rounded-tl-sm p-4 backdrop-blur-sm self-start animate-slide-in-right">
+                          <p className="text-xs text-white/80 leading-relaxed">
+                            <span className="text-[var(--neon-rose)] font-bold text-[10px] block mb-1 tracking-wider uppercase">
+                              User
+                            </span>
+                            "Hi, I need to book a consultation."
+                          </p>
+                        </div>
+
+                        <div className="bg-[var(--neon-violet)]/10 border border-[var(--neon-violet)]/20 rounded-2xl rounded-tr-sm p-4 backdrop-blur-sm self-end animate-slide-in-left shadow-[0_0_15px_-5px_var(--neon-violet)]">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Sparkles className="h-3 w-3 text-[var(--neon-cyan)]" />
+                            <span className="text-[var(--neon-cyan)] font-bold text-[10px] tracking-wider uppercase">
+                              AI Agent
+                            </span>
                           </div>
-                          <div className="flex items-start gap-2">
-                            <Sparkles className="h-4 w-4 text-white mt-0.5 flex-shrink-0" />
-                            <p className="text-xs text-white font-medium">
-                              &ldquo;I&apos;d be happy to help! Let me check
-                              Thursday&apos;s availability for you...&rdquo;
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 pt-2 border-t border-white/20">
-                            <Calendar className="h-4 w-4 text-green-300" />
-                            <p className="text-xs text-green-300 font-medium">
-                              ✓ Appointment booked: Thu 2:00 PM
-                            </p>
-                          </div>
+                          <p className="text-xs text-white leading-relaxed">
+                            "I can help with that! Is Thursday at 2 PM good for
+                            you?"
+                          </p>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Bottom Stats */}
-                      <div className="mt-auto pt-4">
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          <div className="bg-white/10 rounded-lg p-2">
-                            <p className="text-lg font-bold text-white">12</p>
-                            <p className="text-[10px] text-white/70">
-                              Calls Today
-                            </p>
-                          </div>
-                          <div className="bg-white/10 rounded-lg p-2">
-                            <p className="text-lg font-bold text-white">8</p>
-                            <p className="text-[10px] text-white/70">Booked</p>
-                          </div>
-                          <div className="bg-white/10 rounded-lg p-2">
-                            <p className="text-lg font-bold text-white">98%</p>
-                            <p className="text-[10px] text-white/70">
-                              Answered
-                            </p>
-                          </div>
-                        </div>
+                    {/* Bottom Actions */}
+                    <div className="mt-auto grid grid-cols-2 gap-3">
+                      <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 flex justify-center items-center hover:bg-red-500/30 transition-colors cursor-pointer">
+                        <Phone className="h-5 w-5 text-red-400 rotate-[135deg]" />
+                      </div>
+                      <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-3 flex justify-center items-center hover:bg-green-500/30 transition-colors cursor-pointer">
+                        <Phone className="h-5 w-5 text-green-400" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Floating Analytics Card */}
-              <div className="absolute -bottom-6 -left-6 bg-card border border-border rounded-2xl p-4 shadow-xl max-w-[200px] animate-bounce-slow">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                    <TrendingUp className="h-4 w-4 text-green-500" />
+              {/* Floating Stats Card - Glassmorphism */}
+              <div
+                className="absolute top-[20%] -right-12 bg-[var(--rich-surface)]/80 backdrop-blur-xl border border-white/10 p-4 rounded-xl shadow-2xl animate-float max-w-[160px]"
+                style={{ animationDelay: "1.5s" }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="bg-green-500/20 p-2 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-green-400" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">This Week</p>
-                    <p className="font-bold text-foreground">+32% Bookings</p>
+                    <p className="text-xs text-white/50 font-medium">
+                      Conversion
+                    </p>
+                    <p className="text-lg font-bold text-white">+240%</p>
                   </div>
-                </div>
-                <div className="h-1 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
-                    style={{ width: "78%" }}
-                  />
                 </div>
               </div>
 
-              {/* Floating Notification Card */}
-              <div className="absolute -top-4 -right-10 bg-card border border-border rounded-xl p-3 shadow-lg max-w-[180px] animate-float">
-                <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MessageSquare className="h-3 w-3 text-primary" />
+              {/* Floating Notification - Glassmorphism */}
+              <div
+                className="absolute bottom-[25%] -left-12 bg-[var(--rich-surface)]/80 backdrop-blur-xl border border-white/10 p-4 rounded-xl shadow-2xl animate-float"
+                style={{ animationDelay: "0.5s" }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[var(--neon-violet)] to-[var(--neon-cyan)] p-[1px]">
+                      <div className="w-full h-full rounded-full bg-[var(--rich-bg)] flex items-center justify-center">
+                        <MessageSquare className="h-4 w-4 text-white" />
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-[var(--rich-bg)]" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-foreground">
-                      New Lead Captured
+                    <p className="text-sm font-bold text-white">
+                      Lead Qualified
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      Just now
+                    <p className="text-[10px] text-white/50">
+                      Just now • Auto-booked
                     </p>
                   </div>
                 </div>
@@ -469,21 +387,25 @@ export function Hero() {
         </div>
       </div>
 
-      {/* Bottom Stats Bar */}
-      <div className="border-t border-border bg-muted/30 backdrop-blur-sm">
-        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-16 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      {/* Bottom Stats Gradient Bar */}
+      <div className="relative border-t border-white/5 bg-white/[0.02] backdrop-blur-sm">
+        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-16 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-white/5">
             {stats.map((stat, index) => (
               <div
                 key={stat.label}
                 className={`transition-all duration-500 ${
-                  currentStat === index ? "scale-105" : "opacity-70"
-                }`}
+                  currentStat === index
+                    ? "scale-105 opacity-100"
+                    : "opacity-50 blur-[0.5px] scale-100 placeholder-opacity-50"
+                } hover:opacity-100 hover:blur-0 hover:scale-105 cursor-default`}
               >
-                <p className="text-2xl sm:text-3xl font-bold text-primary">
+                <p className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
                   {stat.value}
                 </p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <p className="text-sm font-medium text-[var(--neon-cyan)]/80 mt-1 uppercase tracking-wider">
+                  {stat.label}
+                </p>
               </div>
             ))}
           </div>

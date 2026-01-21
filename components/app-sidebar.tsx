@@ -202,24 +202,24 @@ const data = {
     //   icon: Phone,
     //   isActive: false,
     //   items: [
-        // {
-        //   title: "Manage Numbers",
-        //   url: "/dashboard/phone-numbers/manage",
-        //   icon: Phone,
-        // },
-        // {
-        //   title: "Assignments",
-        //   url: "/dashboard/phone-numbers/assign",
-        //   icon: Users,
-        // },
-        // {
-        //   title: "Call Routing",
-        //   url: "/dashboard/phone-numbers/routing",
-        //   icon: Bell,
-        // },
+    // {
+    //   title: "Manage Numbers",
+    //   url: "/dashboard/phone-numbers/manage",
+    //   icon: Phone,
+    // },
+    // {
+    //   title: "Assignments",
+    //   url: "/dashboard/phone-numbers/assign",
+    //   icon: Users,
+    // },
+    // {
+    //   title: "Call Routing",
+    //   url: "/dashboard/phone-numbers/routing",
+    //   icon: Bell,
+    // },
     //   ],
     // },
-   
+
     // {
     //   title: "SMS",
     //   url: "/dashboard/sms",
@@ -250,11 +250,11 @@ const data = {
     //   url: "/dashboard/billing",
     //   icon: CreditCard,
     // },
-    {
-      name: "Account Settings",
-      url: "/dashboard/settings",
-      icon: Settings,
-    },
+    // {
+    //   name: "Account Settings",
+    //   url: "/dashboard/settings",
+    //   icon: Settings,
+    // },
   ],
 };
 
@@ -276,18 +276,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  };
-
-  // Calculate days remaining in trial
-  const calculateTrialDaysRemaining = (
-    trialEnd: string | null,
-  ): number | null => {
-    if (!trialEnd) return null;
-    const trialEndDate = new Date(trialEnd);
-    const now = new Date();
-    const diffTime = trialEndDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
   };
 
   console.log("🚀 ~ Sidebar render, user:", user, "teams:", teams);
@@ -312,18 +300,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         if (businessId) {
           const supabase = createClient();
 
-          // Fetch business data and subscription in parallel
-          const [businessResult, subscriptionResult] = await Promise.all([
-            getBusinessById(businessId),
-            supabase
-              .from("subscriptions")
-              .select("status, trial_end")
-              .eq("business_id", businessId)
-              .maybeSingle(),
-          ]);
-
+          // Fetch business data
+          const businessResult = await getBusinessById(businessId);
           const { data: businessData } = businessResult;
-          const { data: subscription } = subscriptionResult;
 
           if (businessData) {
             setTeams([
@@ -353,16 +332,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             }
           }
 
-          // Check if user is on trial and calculate days remaining
-          if (
-            subscription &&
-            subscription.status === "trialing" &&
-            subscription.trial_end
-          ) {
-            const daysRemaining = calculateTrialDaysRemaining(
-              subscription.trial_end,
-            );
-            setTrialDaysRemaining(daysRemaining);
+          // Use unified billing state endpoint for trial days remaining
+          try {
+            const res = await fetch("/api/billing/state");
+            if (res.ok) {
+              const payload = (await res.json()) as {
+                trialDaysLeft?: number | null;
+              };
+              if (
+                typeof payload.trialDaysLeft === "number" &&
+                payload.trialDaysLeft >= 0
+              ) {
+                setTrialDaysRemaining(payload.trialDaysLeft);
+              } else {
+                setTrialDaysRemaining(null);
+              }
+            }
+          } catch (billingError) {
+            console.error("Error fetching billing state in sidebar:", billingError);
           }
         }
         console.log("🚀 ~ Sidebar updated teams:", teams);
@@ -418,8 +405,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavProjects projects={data.projects} />
-
         <SidebarMenu className="gap-2">
           {trialDaysRemaining !== null && (
             <SidebarMenuItem>
@@ -470,6 +455,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           )}
         </SidebarMenu>
+        <NavProjects projects={data.projects} />
 
         {user && (
           <NavUser

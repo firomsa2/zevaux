@@ -2,6 +2,7 @@ import { DashboardContent } from "@/components/dashboard/content";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getOnboardingProgress } from "@/utils/onboarding";
+import { getBillingStateForUser, getTrialDaysRemaining } from "@/lib/billing";
 
 export default async function Page() {
   const supabase = await createClient();
@@ -60,7 +61,7 @@ export default async function Page() {
       // Calculate Avg Duration
       const totalMinutes = calls.reduce(
         (acc, call) => acc + (parseFloat(call.minutes) || 0),
-        0
+        0,
       );
       const avg = totalMinutes / calls.length;
       dashboardData.avgDuration = `${avg.toFixed(1)}m`;
@@ -70,10 +71,10 @@ export default async function Page() {
 
       // Success Rate (Calls > 0.2 min / Total Calls) - Heuristic
       const successfulCalls = calls.filter(
-        (c) => (parseFloat(c.minutes) || 0) > 0.2
+        (c) => (parseFloat(c.minutes) || 0) > 0.2,
       ).length;
       dashboardData.successRate = `${Math.round(
-        (successfulCalls / calls.length) * 100
+        (successfulCalls / calls.length) * 100,
       )}%`;
     }
   }
@@ -81,11 +82,28 @@ export default async function Page() {
   // Get onboarding progress
   const onboardingProgress = await getOnboardingProgress(user.id);
 
+  // Resolve billing state; if trial has expired and there's no subscription,
+  // redirect to billing page to encourage upgrade before accessing the main dashboard.
+  const billingState = await getBillingStateForUser(user.id);
+  let trialDaysLeft: number | null = null;
+
+  if (billingState) {
+    if (
+      !billingState.hasActiveSubscription &&
+      billingState.trialStatus === "expired"
+    ) {
+      redirect("/dashboard/billing");
+    }
+
+    trialDaysLeft = getTrialDaysRemaining(billingState);
+  }
+
   return (
     <DashboardContent
       user={user}
       data={dashboardData}
       onboardingProgress={onboardingProgress}
+      trialDaysLeft={trialDaysLeft}
     />
   );
 }

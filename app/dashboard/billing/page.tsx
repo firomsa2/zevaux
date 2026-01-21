@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { getUserBusinessWithRelations } from "@/lib/business";
+import { getBillingStateForUser, getTrialDaysRemaining } from "@/lib/billing";
 import { SubscriptionCard } from "@/components/billing/subscription-card";
 import { BillingPlansComparison } from "@/components/billing/plans-comparison";
 import { UsageOverview } from "@/components/billing/usage-overview";
@@ -63,6 +64,12 @@ export default async function BillingPage() {
     teamMembers: usage?.team_members_count || 0,
   };
 
+  // Billing state / trial days remaining
+  const billingState = await getBillingStateForUser(authUser.id);
+  const trialDaysLeft = billingState
+    ? getTrialDaysRemaining(billingState)
+    : null;
+
   return (
     <main className="flex-1 p-8 space-y-8">
       <div>
@@ -70,6 +77,16 @@ export default async function BillingPage() {
         <p className="text-muted-foreground mt-2">
           Manage your plan and billing information
         </p>
+
+        {typeof trialDaysLeft === "number" && trialDaysLeft >= 0 && (
+          <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/20 dark:text-amber-200">
+            {trialDaysLeft === 0
+              ? "Your free trial ends today. Choose a plan below to avoid any interruption in service."
+              : `Free trial: ${trialDaysLeft} day${
+                  trialDaysLeft === 1 ? "" : "s"
+                } remaining. Select a plan below to continue after your trial.`}
+          </div>
+        )}
       </div>
 
       <SubscriptionCard
