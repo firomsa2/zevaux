@@ -32,40 +32,47 @@ const PLAN_META: Record<
 > = {
   starter: {
     icon: Zap,
-    description: "Perfect for small businesses and solo owners.",
+    description: "Perfect for solo owners and very small teams.",
     popular: false,
     color: "text-blue-500",
     features_highlight: [
       "Custom greeting & agent name",
       "Message taking",
-      "Call transfers",
+      "Spam & robocall filtering",
+    ],
+  },
+  basic: {
+    icon: Sparkles,
+    description: "Designed for small businesses with steady calls.",
+    popular: false,
+    color: "text-purple-500",
+    features_highlight: [
+      "Smart call routing",
+      "Lead qualification",
+      "SMS follow-ups",
     ],
   },
   pro: {
     icon: Crown,
-    description: "For growing businesses needing full automation.",
+    description: "For growing businesses needing action, not just messages.",
     popular: true,
     color: "text-amber-500",
     features_highlight: [
       "Appointment booking",
       "Live call transfers",
-      "Advanced routing",
+      "CRM integrations",
       "Priority support",
     ],
   },
-  enterprise: {
+  custom: {
     icon: Building,
-    description:
-      "For complex or multi-location businesses needing custom solutions and advanced training.",
+    description: "High-volume and multi-location businesses.",
     popular: false,
     color: "text-slate-500",
     features_highlight: [
-      "Multiple locations support",
-      "Fully custom AI prompts",
-      "Advanced agent training",
+      "Custom minute bundles",
+      "Multiple locations",
       "Dedicated account manager",
-      "White-label options",
-      "Enterprise SSO & security",
     ],
   },
 };
@@ -82,26 +89,62 @@ export function PlansOverview({
     setLoading(planId);
     try {
       const plan = plans.find((p) => p.id === planId);
-      const response = await fetch("/api/stripe/checkout/session", {
+      if (!plan?.slug) {
+        throw new Error("Plan not found");
+      }
+
+      // First, try to update existing subscription
+      const updateResponse = await fetch("/api/stripe/subscriptions/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessId: business.id,
-          planSlug: plan?.slug,
+          planSlug: plan.slug,
           interval: isAnnual ? "year" : "month",
         }),
       });
 
-      const data = await response.json();
+      const updateData = await updateResponse.json();
 
-      if (data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.url;
+      if (updateResponse.ok && updateData.success) {
+        // Subscription updated successfully
+        toast.success("Plan updated successfully", {
+          description: "Your subscription has been updated. Refreshing...",
+        });
+        setTimeout(() => window.location.reload(), 1500);
+        return;
+      }
+
+      // If update failed because no subscription exists, create new one
+      if (
+        updateData.error?.includes("No active subscription") ||
+        updateData.redirectToCheckout
+      ) {
+        const checkoutResponse = await fetch("/api/stripe/checkout/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessId: business.id,
+            planSlug: plan.slug,
+            interval: isAnnual ? "year" : "month",
+          }),
+        });
+
+        const checkoutData = await checkoutResponse.json();
+
+        if (checkoutData.url) {
+          // Redirect to Stripe checkout
+          window.location.href = checkoutData.url;
+        } else {
+          throw new Error(
+            checkoutData.error || "Failed to create checkout session"
+          );
+        }
       } else {
-        throw new Error(data.error || "Failed to create checkout session");
+        throw new Error(updateData.error || "Failed to update subscription");
       }
     } catch (error) {
-      toast.error("Failed to start checkout", {
+      toast.error("Failed to change plan", {
         description:
           error instanceof Error ? error.message : "Please try again.",
       });
@@ -122,22 +165,6 @@ export function PlansOverview({
   }
 
   const displayPlans = [...plans];
-
-  // Add Enterprise plan if it doesn't exist
-  if (!displayPlans.some((p) => p.slug === "enterprise")) {
-    displayPlans.push({
-      id: "enterprise-mock",
-      slug: "enterprise",
-      name: "Enterprise",
-      // @ts-ignore - Allowing null for custom pricing display
-      monthly_price: null,
-      minutes_limit: 0, // 0 displays as "Unlimited"
-      features: {},
-      max_phone_numbers: 0,
-      max_team_members: 0,
-      created_at: new Date().toISOString(),
-    });
-  }
 
   const sortedPlans = displayPlans.sort((a, b) => {
     // Treat null price (Custom) as higher than any specific price
@@ -179,11 +206,12 @@ export function PlansOverview({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {sortedPlans.map((plan) => {
-          const meta = PLAN_META[plan.slug] || {
+          const meta = PLAN_META[plan.slug || plan.id] || {
             icon: Sparkles,
             description: "Advanced AI features",
             popular: false,
             color: "text-primary",
+            features_highlight: [],
           };
           const Icon = meta.icon;
           const isCurrentPlan = currentPlan?.id === plan.id;
@@ -230,7 +258,7 @@ export function PlansOverview({
               <CardContent className="flex-1 space-y-6">
                 <div>
                   <div className="flex items-baseline gap-1">
-                    {plan.monthly_price !== null ? (
+                    {plan.monthly_price !== null && plan.monthly_price > 0 ? (
                       <>
                         <span className="text-4xl font-bold tracking-tight">
                           ${displayPrice}
@@ -243,7 +271,7 @@ export function PlansOverview({
                       <span className="text-3xl font-bold">Custom</span>
                     )}
                   </div>
-                  {plan.monthly_price !== null && (
+                  {plan.monthly_price !== null && plan.monthly_price > 0 && (
                     <p className="text-xs text-muted-foreground mt-1 font-medium h-4">
                       {isAnnual && (
                         <span className="text-green-600">
@@ -267,7 +295,7 @@ export function PlansOverview({
                       </div>
                       <span>
                         <strong className="font-medium text-foreground">
-                          {plan.minutes_limit > 0
+                          {plan.minutes_limit && plan.minutes_limit > 0
                             ? plan.minutes_limit.toLocaleString()
                             : "Unlimited"}
                         </strong>{" "}
@@ -325,7 +353,7 @@ export function PlansOverview({
                   >
                     Current Plan
                   </Button>
-                ) : plan.monthly_price === null ? (
+                ) : plan.monthly_price === null || plan.monthly_price === 0 ? (
                   <Button
                     className="w-full h-11"
                     variant="outline"

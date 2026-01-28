@@ -58,7 +58,7 @@ export default async function BusinessSetupPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/(auth)/login");
+    redirect("/login");
   }
 
   const { data: userData } = await supabase
@@ -68,7 +68,7 @@ export default async function BusinessSetupPage() {
     .single();
 
   if (!userData?.business_id) {
-    redirect("/(auth)/login");
+    redirect("/login");
   }
 
   const { data: business } = await supabase
@@ -78,7 +78,7 @@ export default async function BusinessSetupPage() {
     .single();
 
   if (!business) {
-    redirect("/(auth)/login");
+    redirect("/login");
   }
 
   // Create onboarding progress record if it doesn't exist
@@ -87,7 +87,7 @@ export default async function BusinessSetupPage() {
       business_id: business.id,
       current_step: 1,
     },
-    { onConflict: "business_id" }
+    { onConflict: "business_id" },
   );
 
   return <EnhancedOnboardingWizard userId={user.id} business={business} />;

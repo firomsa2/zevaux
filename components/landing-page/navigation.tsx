@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/client";
@@ -89,12 +90,18 @@ export function Navigation() {
         }
       `}
     >
-      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-16">
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-12">
         <div className="flex h-16 lg:h-20 items-center justify-between">
           {/* LOGO */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary transition-transform duration-300 group-hover:scale-105">
-              <Phone className="h-5 w-5 text-primary-foreground" />
+            <div className="relative h-14 w-14 transition-transform duration-300 group-hover:scale-105">
+              <Image
+                src="/zevaux-logo-1.png"
+                alt="Zevaux"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
             <span className="text-xl sm:text-2xl font-bold text-white">
               Zevaux

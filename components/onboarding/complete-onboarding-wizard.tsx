@@ -36,11 +36,13 @@ import {
   Phone,
   Settings,
   Zap,
+  CreditCard,
 } from "lucide-react";
 import type { Business } from "@/types/database";
 import { triggerOnboardingRefresh } from "@/utils/onboarding-refresh";
+import { BillingStep } from "./billing-step";
 
-// CHANGED: Consolidated onboarding flow with 4 critical steps for SMBs
+// CHANGED: Consolidated onboarding flow with critical steps for SMBs
 const ONBOARDING_STEPS = [
   {
     id: "business_info",
@@ -61,6 +63,18 @@ const ONBOARDING_STEPS = [
     title: "Receptionist Configuration",
     description: "Customize voice, greeting, and business hours",
     icon: Zap,
+  },
+  {
+    id: "billing",
+    title: "Select Plan",
+    description: "Choose the plan that fits your needs",
+    icon: CreditCard,
+  },
+  {
+    id: "knowledge_base", // explicit step now
+    title: "Knowledge Base",
+    description: "Optional: Add FAQs to train your AI",
+    icon: FileText,
   },
   {
     id: "go_live",
@@ -124,6 +138,8 @@ interface FormData {
   businessHoursEnd: string;
   knowledgeBaseUrl: string;
   businessHoursConfigured: boolean;
+  selectedPlanId: string;
+  isAnnual: boolean;
 }
 
 export function CompleteOnboardingWizard({
@@ -149,6 +165,8 @@ export function CompleteOnboardingWizard({
     businessHoursEnd: "17:00",
     knowledgeBaseUrl: "",
     businessHoursConfigured: false,
+    selectedPlanId: "starter",
+    isAnnual: true,
   });
 
   const progress = ((currentStep + 1) / ONBOARDING_STEPS.length) * 100;
@@ -180,10 +198,12 @@ export function CompleteOnboardingWizard({
           return false;
         }
         return true;
-      case 3: // Knowledge Base
+      case 3: // Billing
+        return true;
+      case 4: // Knowledge Base
         // Knowledge base is optional
         return true;
-      case 4: // Test/Go Live
+      case 5: // Test/Go Live
         return true;
       default:
         return true;
@@ -216,6 +236,7 @@ export function CompleteOnboardingWizard({
         body: JSON.stringify({
           userId,
           businessId: business.id,
+          selectedPlan: formData.selectedPlanId,
           formData: {
             ...formData,
             businessHoursConfigured: true,
@@ -234,7 +255,7 @@ export function CompleteOnboardingWizard({
       router.push("/dashboard");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to complete onboarding"
+        err instanceof Error ? err.message : "Failed to complete onboarding",
       );
       console.error("[v0] Onboarding error:", err);
     } finally {
@@ -307,8 +328,8 @@ export function CompleteOnboardingWizard({
                           isCurrent
                             ? "bg-blue-600 text-white shadow-lg"
                             : isCompleted
-                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                            : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+                              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                              : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
                         }`}
                       >
                         {isCompleted ? (
@@ -615,8 +636,20 @@ export function CompleteOnboardingWizard({
               </FieldGroup>
             )}
 
-            {/* Step 4: Knowledge Base */}
+            {/* Step 4: Billing */}
             {currentStep === 3 && (
+              <BillingStep
+                selectedPlanId={formData.selectedPlanId}
+                loading={loading}
+                onSelectPlan={(planId, isAnnual) => {
+                  handleInputChange("selectedPlanId", planId);
+                  handleInputChange("isAnnual", isAnnual);
+                }}
+              />
+            )}
+
+            {/* Step 5: Knowledge Base */}
+            {currentStep === 4 && (
               <div className="space-y-5">
                 <div>
                   <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">
@@ -672,8 +705,8 @@ export function CompleteOnboardingWizard({
               </div>
             )}
 
-            {/* Step 5: Ready to Go Live */}
-            {currentStep === 4 && (
+            {/* Step 6: Ready to Go Live */}
+            {currentStep === 5 && (
               <div className="space-y-5">
                 <div className="text-center mb-6">
                   <div className="flex justify-center mb-4">
@@ -709,6 +742,15 @@ export function CompleteOnboardingWizard({
                         </span>
                         <span className="font-medium text-slate-900 dark:text-white">
                           {formData.industry}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600 dark:text-slate-400">
+                          Selected Plan:
+                        </span>
+                        <span className="font-medium text-slate-900 dark:text-white capitalize">
+                          {formData.selectedPlanId} (
+                          {formData.isAnnual ? "Annual" : "Monthly"})
                         </span>
                       </div>
                       <div className="flex justify-between">

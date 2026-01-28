@@ -386,6 +386,7 @@ export async function getUserSession() {
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
+  const origin = ((await headers()).get("origin") ?? "") as string;
 
   const credentials = {
     name: formData.get("name") as string,
@@ -420,6 +421,7 @@ export async function signUp(formData: FormData) {
           name: credentials.name,
           business_name: credentials.businessName, // Pass business name to auth metadata
         },
+        emailRedirectTo: `${origin}/auth/callback?next=/onboarding/website`,
       },
     });
 
@@ -445,34 +447,34 @@ export async function signUp(formData: FormData) {
       };
     }
 
-    if (data.user) {
-      const { createBusinessForUser } = await import("./business");
-      const businessResult = await createBusinessForUser(
-        data.user.id,
-        credentials.businessName
-      );
+    // if (data.user) {
+    //   const { createBusinessForUser } = await import("./business");
+    //   const businessResult = await createBusinessForUser(
+    //     data.user.id,
+    //     credentials.businessName
+    //   );
 
-      if (!businessResult.success) {
-        console.error("Failed to create business:", businessResult.error);
-      }
+    //   if (!businessResult.success) {
+    //     console.error("Failed to create business:", businessResult.error);
+    //   }
 
-      if (businessResult.success) {
-        const { initializeStripeCustomer } = await import("./stripe");
-        const stripeResult = await initializeStripeCustomer(
-          data.user.id,
-          credentials.email,
-          credentials.businessName
-        );
+    //   if (businessResult.success) {
+    //     const { initializeStripeCustomer } = await import("./stripe");
+    //     const stripeResult = await initializeStripeCustomer(
+    //       data.user.id,
+    //       credentials.email,
+    //       credentials.businessName
+    //     );
 
-        if (!stripeResult.success) {
-          console.error(
-            "Failed to create Stripe customer:",
-            stripeResult.error
-          );
-          // Don't fail signup if Stripe customer creation fails, will be created during checkout
-        }
-      }
-    }
+    //     if (!stripeResult.success) {
+    //       console.error(
+    //         "Failed to create Stripe customer:",
+    //         stripeResult.error
+    //       );
+    //       // Don't fail signup if Stripe customer creation fails, will be created during checkout
+    //     }
+    //   }
+    // }
 
     revalidatePath("/dashboard", "layout");
 
@@ -627,7 +629,7 @@ export async function signUpWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback?next=/onboarding/website`,
     },
   });
 

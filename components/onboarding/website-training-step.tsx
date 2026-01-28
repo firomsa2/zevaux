@@ -22,7 +22,9 @@ import { cn } from "@/lib/utils";
 
 interface WebsiteTrainingStepProps {
   businessId: string;
-  userId: string;
+  userId?: string; // Optional for embedded context
+  onComplete?: (url: string) => Promise<void>; // Optional callback for wizard context
+  embedded?: boolean; // If true, adjust styling for wizard context
 }
 
 type TrainingStep = "idle" | "analyzing" | "training" | "completed";
@@ -30,12 +32,15 @@ type TrainingStep = "idle" | "analyzing" | "training" | "completed";
 export function WebsiteTrainingStep({
   businessId,
   userId,
+  onComplete,
+  embedded = false,
 }: WebsiteTrainingStepProps) {
   const [url, setUrl] = useState("");
   const [step, setStep] = useState<TrainingStep>("idle");
   const [loading, setLoading] = useState(false);
   const [continueLoading, setContinueLoading] = useState(false);
   const [trainingProgress, setTrainingProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   // Training checklist items state
@@ -82,18 +87,59 @@ export function WebsiteTrainingStep({
     }
 
     setLoading(true);
-    // Simulate API call delay for effect
-    setTimeout(() => {
-      setLoading(false);
-      setStep("training");
-    }, 1500);
+    setError(null);
 
-    // In background, actually call API
-    fetch("/api/onboarding/analyze-website", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ businessId, url: formattedUrl }),
-    }).catch((err) => console.error("Analysis error", err));
+    try {
+      // Show success toast when analysis starts
+      toast.success("Website analysis started", {
+        description: "We're analyzing your website structure...",
+      });
+
+      // Call API to start analysis
+      const response = await fetch("/api/onboarding/analyze-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessId, url: formattedUrl }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || "Failed to start website analysis",
+        );
+      }
+
+      // Mark progress immediately after successful API call
+      try {
+        const markResponse = await fetch("/api/onboarding/mark-website-complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ businessId }),
+        });
+
+        if (!markResponse.ok) {
+          console.warn("Failed to mark progress immediately, webhook will update it");
+        }
+      } catch (markError) {
+        console.warn("Error marking progress:", markError);
+        // Continue anyway - webhook will update it
+      }
+
+      // Simulate API call delay for effect, then show training animation
+      setTimeout(() => {
+        setLoading(false);
+        setStep("training");
+      }, 1500);
+    } catch (err) {
+      console.error("Error analyzing website:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to analyze website";
+      setError(errorMessage);
+      toast.error("Analysis failed", {
+        description: errorMessage,
+      });
+      setLoading(false);
+    }
   };
 
   const handleContinue = async () => {
@@ -107,9 +153,17 @@ export function WebsiteTrainingStep({
 
     setContinueLoading(true);
 
-    // Mark website training as completed
-    let shouldRedirect = true;
     try {
+      // If onComplete callback is provided (wizard context), use it
+      if (onComplete) {
+        toast.success("Website training complete!", {
+          description: "Your business information has been analyzed.",
+        });
+        await onComplete(url);
+        return;
+      }
+
+      // Otherwise, mark progress and redirect (standalone context)
       const response = await fetch("/api/onboarding/mark-website-complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,8 +171,10 @@ export function WebsiteTrainingStep({
       });
 
       if (response.ok) {
-        // Success - proceed with redirect
-        shouldRedirect = true;
+        toast.success("Training complete!", {
+          description: "Redirecting to next step...",
+        });
+        router.push("/dashboard/onboarding");
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Failed to mark website training complete:", errorData);
@@ -132,15 +188,13 @@ export function WebsiteTrainingStep({
           toast.info("Progress will be tracked via document status", {
             description: "You can continue.",
           });
-          // Still allow navigation - we'll check document status as fallback
-          shouldRedirect = true;
         } else {
           toast.warning("Progress may not be saved", {
             description: "But you can continue.",
           });
-          // Still allow navigation
-          shouldRedirect = true;
         }
+        // Still allow navigation - we have fallback tracking
+        router.push("/dashboard/onboarding");
       }
     } catch (error) {
       console.error("Failed to mark website training complete:", error);
@@ -148,23 +202,38 @@ export function WebsiteTrainingStep({
         description: "You can continue.",
       });
       // Still allow navigation - we have fallback tracking
-      shouldRedirect = true;
+      if (!onComplete) {
+        router.push("/dashboard/onboarding");
+      }
+    } finally {
+      setContinueLoading(false);
     }
-
-    // Redirect to dashboard onboarding
-    // The dashboard will check progress and show the correct next step
-    if (shouldRedirect) {
-      router.push("/dashboard/onboarding");
-    }
-
-    setContinueLoading(false);
   };
 
+  // Adjust container styling based on embedded prop
+  const containerClass = embedded
+    ? "w-full"
+    : "flex justify-center items-center min-h-[90vh] p-4 bg-slate-50 dark:bg-slate-950";
+
+  const cardClass = embedded
+    ? "w-full shadow-md border overflow-hidden"
+    : "w-full max-w-5xl shadow-xl border-0 overflow-hidden min-h-[500px] flex flex-col md:flex-row";
+
+  // Adjust left side styling for embedded mode
+  const leftSideClass = embedded
+    ? "w-full p-6 bg-white dark:bg-slate-900 flex flex-col justify-center"
+    : "w-full md:w-1/2 p-8 md:p-12 bg-white dark:bg-slate-900 flex flex-col justify-center border-r border-slate-100 dark:border-slate-800";
+
+  // Adjust right side styling for embedded mode
+  const rightSideClass = embedded
+    ? "w-full p-6 bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center"
+    : "w-full md:w-1/2 p-8 md:p-12 bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center";
+
   return (
-    <div className="flex justify-center items-center min-h-[90vh] p-4 bg-slate-50 dark:bg-slate-950">
-      <Card className="w-full max-w-5xl shadow-xl border-0 overflow-hidden min-h-[500px] flex flex-col md:flex-row">
+    <div className={containerClass}>
+      <Card className={cardClass}>
         {/* Left Side - Info/Visuals */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 bg-white dark:bg-slate-900 flex flex-col justify-center border-r border-slate-100 dark:border-slate-800">
+        <div className={leftSideClass}>
           <div className="mb-8">
             {/* <div className="flex items-center gap-2 mb-6">
               <Button
@@ -183,7 +252,10 @@ export function WebsiteTrainingStep({
               </div>
             </div> */}
 
-            <h1 className="text-xl md:text-2xl font-bold  tracking-tight">
+            <h1 className={cn(
+              "font-bold tracking-tight",
+              embedded ? "text-lg md:text-xl" : "text-xl md:text-2xl"
+            )}>
               {step === "idle" || step === "analyzing" ? (
                 <>
                   Train Zevaux with your Website
@@ -284,7 +356,7 @@ export function WebsiteTrainingStep({
         </div>
 
         {/* Right Side - Action/Form */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center">
+        <div className={rightSideClass}>
           {step === "idle" || step === "analyzing" ? (
             <div className="w-full max-w-sm space-y-6">
               <div className="text-center md:text-left mb-4">
@@ -293,13 +365,24 @@ export function WebsiteTrainingStep({
                 </h3>
               </div>
 
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    {error}
+                  </p>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="relative">
                   <Input
                     placeholder="https://example.com"
                     className="pl-4 h-12 text-lg bg-white shadow-sm"
                     value={url}
-                    onChange={(e) => setUrl(e.target.value)}
+                    onChange={(e) => {
+                      setUrl(e.target.value);
+                      setError(null);
+                    }}
                     required
                     disabled={loading}
                   />
@@ -323,15 +406,17 @@ export function WebsiteTrainingStep({
                 </Button>
               </form>
 
-              <div className="text-center mt-6">
-                <Button
-                  variant="link"
-                  className="text-muted-foreground text-sm"
-                  onClick={() => router.push("/dashboard/onboarding")}
-                >
-                  I don't have a website yet
-                </Button>
-              </div>
+              {!embedded && (
+                <div className="text-center mt-6">
+                  <Button
+                    variant="link"
+                    className="text-muted-foreground text-sm"
+                    onClick={() => router.push("/dashboard/onboarding")}
+                  >
+                    I don't have a website yet
+                  </Button>
+                </div>
+              )}
             </div>
           ) : step === "training" ? (
             <div className="w-full max-w-sm space-y-8">
@@ -410,13 +495,19 @@ export function WebsiteTrainingStep({
                     </>
                   )}
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => setStep("idle")}
-                  className="w-full text-muted-foreground hover:text-foreground"
-                >
-                  Back / Retrain
-                </Button>
+                {!embedded && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setStep("idle");
+                      setUrl("");
+                      setError(null);
+                    }}
+                    className="w-full text-muted-foreground hover:text-foreground"
+                  >
+                    Back / Retrain
+                  </Button>
+                )}
               </div>
             </div>
           )}

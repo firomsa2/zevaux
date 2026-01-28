@@ -10,7 +10,7 @@ import {
   type BusinessInfoFormData,
 } from "./business-info-substeps";
 import { PhoneVerificationStep } from "./phone-verification-step";
-import { WebsiteUrlStep } from "./website-url-step";
+import { WebsiteTrainingStep } from "./website-training-step";
 import { PlansOverview } from "@/components/billing/plans-overview";
 import type { Business, Plan } from "@/types/database";
 import { createClient } from "@/utils/supabase/client";
@@ -97,15 +97,6 @@ export function EnhancedOnboardingWizard({
 
     if (primaryConfig) {
       setBusinessConfig(parseBusinessConfig(primaryConfig));
-      return;
-    }
-
-    // Fallback for older DBs / different table naming.
-    const fallback = await fetchFrom("business_config");
-    const fallbackConfig = fallback.data?.config;
-
-    if (fallbackConfig) {
-      setBusinessConfig(parseBusinessConfig(fallbackConfig));
     }
   };
 
@@ -257,7 +248,7 @@ export function EnhancedOnboardingWizard({
     { id: "website_url", label: "Website" },
     { id: "business_info", label: "Business Info" },
     { id: "phone_verification", label: "Phone Setup" },
-    { id: "pricing", label: "Select Plan" },
+    { id: "pricing", label: "Go Live" },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
@@ -478,9 +469,13 @@ export function EnhancedOnboardingWizard({
 
               // Show different message if phone already existed
               if (provisionData.alreadyExists) {
-                toast.info(`Your phone number ${provisionData.phoneNumber} is already assigned.`);
+                toast.info(
+                  `Your phone number ${provisionData.phoneNumber} is already assigned.`,
+                );
               } else {
-                toast.success(`Phone number ${provisionData.phoneNumber} assigned!`);
+                toast.success(
+                  `Phone number ${provisionData.phoneNumber} assigned!`,
+                );
               }
             } else {
               // Otherwise fallback to polling
@@ -492,16 +487,33 @@ export function EnhancedOnboardingWizard({
             }
           } else {
             // If already requested or other error, check status instead
-            const errorData = await provisionResponse.json();
+            const errorData = await provisionResponse.json().catch(() => ({
+              error: "Unknown error occurred",
+            }));
             console.log("Provision request result:", errorData);
+            
+            // Set error state with the actual error message
+            setPhoneData({
+              phoneNumber: null,
+              status: "failed",
+              error: errorData.error || "Failed to initiate provisioning",
+            });
+            
+            // Show error toast
+            toast.error(
+              errorData.error || "Failed to initiate phone provisioning",
+            );
           }
-        } catch (provisionError) {
+        } catch (provisionError: any) {
           console.error("[v0] Phone provisioning error:", provisionError);
+          const errorMessage =
+            provisionError?.message || "Failed to initiate provisioning";
           setPhoneData({
             phoneNumber: null,
             status: "failed",
-            error: "Failed to initiate provisioning",
+            error: errorMessage,
           });
+          toast.error(errorMessage);
         }
       } else {
         // Phone already exists, just log it
@@ -578,7 +590,9 @@ export function EnhancedOnboardingWizard({
 
   const handlePricingComplete = () => {
     // Finalize onboarding
-    toast.success("Congratulations! Your AI receptionist is live and ready to take calls!");
+    toast.success(
+      "Congratulations! Your AI receptionist is live and ready to take calls!",
+    );
     router.push("/dashboard");
   };
 
@@ -596,16 +610,12 @@ export function EnhancedOnboardingWizard({
             steps={steps}
             currentStepIndex={currentStepIndex}
             completedSteps={Array.from(completedSteps)}
-            onStepClick={(stepId, stepIndex) => {
-              // Allow navigation to any step that is completed
-              // or the current step
+            onStepClick={(_, stepIndex) => {
               const step = steps[stepIndex];
-              // Calculate effective completion status
-              // Users can go back to completed steps
-              const isCompleted = completedSteps.has(step.id);
-              const isCurrent = step.id === currentStep;
-
-              if (isCompleted || isCurrent) {
+              if (
+                completedSteps.has(step.id) ||
+                step.id === currentStep
+              ) {
                 setCurrentStep(step.id);
               }
             }}
@@ -637,15 +647,15 @@ export function EnhancedOnboardingWizard({
             {currentStep === "website_url" &&
               !completedSteps.has("website_url") && (
                 <div className="max-w-3xl mx-auto">
-                  <WebsiteUrlStep
+                  <WebsiteTrainingStep
                     businessId={business.id}
+                    userId={userId}
                     onComplete={handleWebsiteUrlComplete}
-                    loading={loading}
+                    embedded
                   />
                 </div>
               )}
 
-            {/* If website_url is completed but we're somehow on that step, redirect */}
             {currentStep === "website_url" &&
               completedSteps.has("website_url") && (
                 <div className="max-w-3xl mx-auto text-center py-12 bg-white rounded-xl shadow-sm border">
@@ -693,7 +703,7 @@ export function EnhancedOnboardingWizard({
                   loading={loading}
                   onRetrySuccess={(phoneNumber) => {
                     setPhoneData({
-                      phoneNumber: phoneNumber,
+                      phoneNumber,
                       status: "completed",
                       error: null,
                     });
@@ -705,8 +715,7 @@ export function EnhancedOnboardingWizard({
 
             {currentStep === "pricing" && (
               <div className="space-y-6 animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
-                {/* Full width for pricing to show 3 cards */}
-                <div className="">
+                <div>
                   <div className="text-center space-y-2 mb-8">
                     <h2 className="text-xl md:text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
                       Choose Your Plan
@@ -716,8 +725,7 @@ export function EnhancedOnboardingWizard({
                       change this anytime.
                     </p>
                   </div>
-
-                  {plans && Array.isArray(plans) && plans.length > 0 ? (
+                  {Array.isArray(plans) && plans.length > 0 ? (
                     <PlansOverview
                       business={business}
                       currentPlan={currentPlan}
@@ -729,7 +737,6 @@ export function EnhancedOnboardingWizard({
                       <p className="text-muted-foreground">Loading plans...</p>
                     </div>
                   )}
-                  {/* Note: The Complete Setup button is moved to within the plans or below them if needed */}
                 </div>
               </div>
             )}

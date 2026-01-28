@@ -293,6 +293,19 @@ export async function addWebsite(websiteData: {
   language: string;
 }) {
   try {
+    // Check billing access before allowing website addition
+    const businessId = await getBusinessId();
+    const {
+      getBillingStateForBusiness,
+      hasFeatureAccess,
+    } = await import("@/lib/billing");
+    const billingState = await getBillingStateForBusiness(businessId);
+    if (!billingState || !hasFeatureAccess(billingState)) {
+      throw new Error(
+        "Your trial has expired or subscription is inactive. Please subscribe to continue using knowledge base features.",
+      );
+    }
+
     // Validate URL
     try {
       new URL(websiteData.url);
@@ -300,7 +313,6 @@ export async function addWebsite(websiteData: {
       throw new Error("Invalid URL");
     }
 
-    const businessId = await getBusinessId();
     const supabase = createClient();
 
     // Create website document
@@ -348,6 +360,19 @@ export async function uploadDocument(formData: FormData) {
       throw new Error("No file provided");
     }
 
+    // Check billing access before allowing document upload
+    const businessId = await getBusinessId();
+    const {
+      getBillingStateForBusiness,
+      hasFeatureAccess,
+    } = await import("@/lib/billing");
+    const billingState = await getBillingStateForBusiness(businessId);
+    if (!billingState || !hasFeatureAccess(billingState)) {
+      throw new Error(
+        "Your trial has expired or subscription is inactive. Please subscribe to continue using knowledge base features.",
+      );
+    }
+
     // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
       throw new Error("File size exceeds 10MB limit");
@@ -375,7 +400,7 @@ export async function uploadDocument(formData: FormData) {
       throw new Error(`Unsupported file type: ${fileExtension}`);
     }
 
-    const businessId = await getBusinessId();
+    // businessId already retrieved above for billing check
     const supabase = createClient();
 
     // Upload to storage

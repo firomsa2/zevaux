@@ -57,7 +57,9 @@ export function SignupForm({
     }
 
     if (password.length < 8) {
-      notify.form.validationError("Password must be at least 8 characters long");
+      notify.form.validationError(
+        "Password must be at least 8 characters long",
+      );
       setError("Password must be at least 8 characters long");
       setLoading(false);
       return;
@@ -74,13 +76,13 @@ export function SignupForm({
 
     if (result.status === "success") {
       toast.success("Account created successfully!", {
-        description: "Redirecting to setup...",
+        description: "Check your email to verify your account.",
       });
       setSuccessMessage(
-        "Account created successfully! Redirecting to setup...",
+        "We’ve sent you a verification link. Please check your email to continue to setup.",
       );
       // Force hard navigation to clear any client states
-      window.location.assign("/onboarding/website");
+      // window.location.assign("/onboarding/website");
     } else {
       toast.error("Sign up failed", {
         description: result.status,

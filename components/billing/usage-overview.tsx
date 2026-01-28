@@ -8,13 +8,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, TrendingUp } from "lucide-react";
-import type { Plan } from "@/types/database";
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
+interface PlanLike {
+  name?: string | null;
+  minutes_limit?: number | null;
+  overage_rate?: number | null;
+}
 
 interface UsageOverviewProps {
-  plan: Plan | null;
+  plan: PlanLike;
   usage: {
     minutesUsed: number;
+    purchasedMinutes?: number;
     callsCount: number;
     activePhoneNumbers: number;
     teamMembers: number;
@@ -22,91 +30,105 @@ interface UsageOverviewProps {
 }
 
 export function UsageOverview({ plan, usage }: UsageOverviewProps) {
-  if (!plan) return null;
+  const purchasedMinutes = usage.purchasedMinutes || 0;
+  const baseIncluded = plan.minutes_limit ?? 0;
+  const minutesIncluded = baseIncluded + purchasedMinutes;
 
-  const minutesPercentage = Math.min(
-    (usage.minutesUsed / plan.minutes_limit) * 100,
-    100
-  );
-  const numbersPercentage = Math.min(
-    (usage.activePhoneNumbers / plan.max_phone_numbers) * 100,
-    100
-  );
-  const teamPercentage = Math.min(
-    (usage.teamMembers / plan.max_team_members) * 100,
-    100
-  );
+  const minutesPercentage =
+    minutesIncluded > 0
+      ? Math.min((usage.minutesUsed / minutesIncluded) * 100, 120)
+      : 0;
 
-  const isNearLimit = minutesPercentage > 80;
-  const isOverLimit = minutesPercentage > 100;
+  const remaining = Math.max(0, minutesIncluded - usage.minutesUsed);
+  const overage = Math.max(0, usage.minutesUsed - minutesIncluded);
+
+  const isNearLimit = minutesPercentage >= 80;
+  const isOverLimit = overage > 0;
+
+  const overageRate = plan.overage_rate ?? 0;
+  const overageCost = overage * overageRate;
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Current Usage</CardTitle>
-        <CardDescription>Track your plan limits and usage</CardDescription>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">Monthly Usage</CardTitle>
+        <CardDescription>
+          {plan.name ?? "Current"} Plan • {baseIncluded} min included
+          {purchasedMinutes > 0 && <span> + {purchasedMinutes} bought</span>}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {/* Minutes Used */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="font-semibold text-sm">Minutes Used</label>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">Minutes</span>
             <span
-              className={`text-sm font-mono ${
-                isOverLimit ? "text-red-600" : "text-muted-foreground"
-              }`}
+              className={
+                isOverLimit ? "text-red-600 font-bold" : "text-muted-foreground"
+              }
             >
-              {usage.minutesUsed} / {plan.minutes_limit} minutes
+              {usage.minutesUsed} / {minutesIncluded}
             </span>
           </div>
-          <Progress value={minutesPercentage} className="h-2" />
-          {isNearLimit && (
-            <div className="flex items-center gap-2 rounded-md bg-amber-50 dark:bg-amber-950/20 p-2">
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              <p className="text-xs text-amber-700 dark:text-amber-400">
-                You're using {minutesPercentage.toFixed(0)}% of your monthly
-                limit
-              </p>
-            </div>
-          )}
+
+          <div className="relative">
+            <Progress
+              value={
+                minutesIncluded > 0
+                  ? (usage.minutesUsed / minutesIncluded) * 100
+                  : 0
+              }
+              className={`h-2.5 ${
+                isOverLimit ? "bg-red-100 dark:bg-red-950" : ""
+              }`}
+            />
+          </div>
+
+          <div className="flex justify-between items-center pt-1">
+            {isOverLimit ? (
+              <div className="text-xs font-semibold text-red-600 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                <span>
+                  Overage: {overage} min (${overageCost.toFixed(2)})
+                </span>
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                {remaining} minutes remaining
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Phone Numbers */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="font-semibold text-sm">Phone Numbers</label>
-            <span className="text-sm text-muted-foreground">
-              {usage.activePhoneNumbers} / {plan.max_phone_numbers}
-            </span>
+        {/* Action Buttons */}
+        {(isNearLimit || isOverLimit) && (
+          <div className="pt-2">
+            <Link href="/dashboard/billing">
+              <Button
+                variant={isOverLimit ? "destructive" : "default"}
+                size="sm"
+                className="w-full"
+              >
+                {isOverLimit ? "Upgrade to Stop Overage" : "Upgrade Plan"}
+              </Button>
+            </Link>
           </div>
-          <Progress value={numbersPercentage} className="h-2" />
-        </div>
-
-        {/* Team Members */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="font-semibold text-sm">Team Members</label>
-            <span className="text-sm text-muted-foreground">
-              {usage.teamMembers} / {plan.max_team_members}
-            </span>
-          </div>
-          <Progress value={teamPercentage} className="h-2" />
-        </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Total Calls</p>
-            <div className="flex items-center gap-1">
-              <TrendingUp className="w-4 h-4 text-blue-600" />
-              <p className="font-semibold">{usage.callsCount}</p>
-            </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">
+              Calls this month
+            </span>
+            <span className="text-lg font-semibold">{usage.callsCount}</span>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Remaining</p>
-            <p className="font-semibold text-green-600">
-              {Math.max(0, plan.minutes_limit - usage.minutesUsed)} min
-            </p>
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">
+              Billing period ends
+            </span>
+            {/* Note: Period end date isn't in props yet; using placeholder */}
+            <span className="text-sm font-medium">End of cycle</span>
           </div>
         </div>
       </CardContent>

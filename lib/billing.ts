@@ -1,4 +1,5 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { TRIAL_PERIOD_DAYS } from "@/lib/constants";
 
 export type TrialStatus = "not_started" | "active" | "expired" | "converted";
 
@@ -19,10 +20,14 @@ export type BillingState = {
     | "unpaid"
     | null;
   planSlug: "starter" | "pro" | "enterprise" | null;
+  paymentFailedAt: string | null;
+  gracePeriodEndsAt: string | null;
+  isInGracePeriod: boolean;
+  shouldRestrictFeatures: boolean;
 };
 
 /**
- * Start a 7-day internal trial for a business if it hasn't started yet.
+ * Start a internal trial for a business if it hasn't started yet.
  * Idempotent: calling multiple times after the trial has started/ended does nothing.
  */
 export async function maybeStartTrialForBusiness(
@@ -48,7 +53,7 @@ export async function maybeStartTrialForBusiness(
   const now = new Date();
   const trialStartedAt = now.toISOString();
   const trialEndsAt = new Date(
-    now.getTime() + 7 * 24 * 60 * 60 * 1000,
+    now.getTime() + TRIAL_PERIOD_DAYS * 24 * 60 * 60 * 1000,
   ).toISOString();
 
   await supabase
@@ -127,14 +132,40 @@ export async function getBillingStateForBusiness(
     trialStatus = "converted";
   }
 
+  // Calculate payment failure and grace period information
+  const paymentFailedAt =
+    (subscription?.metadata as any)?.payment_failed_at || null;
+  const GRACE_PERIOD_DAYS = 3; // 3-day grace period before restricting features
+  let gracePeriodEndsAt: string | null = null;
+  let isInGracePeriod = false;
+  let shouldRestrictFeatures = false;
+
+  if (
+    paymentFailedAt &&
+    (subscription?.status === "past_due" || subscription?.status === "unpaid")
+  ) {
+    const failedDate = new Date(paymentFailedAt);
+    gracePeriodEndsAt = new Date(
+      failedDate.getTime() + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const now = new Date();
+    isInGracePeriod = now < new Date(gracePeriodEndsAt);
+    shouldRestrictFeatures = !isInGracePeriod; // Restrict after grace period
+  }
+
   return {
     businessId,
     trialStatus,
     trialStartedAt,
     trialEndsAt,
     hasActiveSubscription,
-    subscriptionStatus: (subscription?.status as BillingState["subscriptionStatus"]) ?? null,
+    subscriptionStatus:
+      (subscription?.status as BillingState["subscriptionStatus"]) ?? null,
     planSlug: (business.billing_plan as BillingState["planSlug"]) ?? null,
+    paymentFailedAt,
+    gracePeriodEndsAt,
+    isInGracePeriod,
+    shouldRestrictFeatures,
   };
 }
 
@@ -142,9 +173,7 @@ export async function getBillingStateForBusiness(
  * Utility to compute trial days remaining from a BillingState.
  * Returns null if no active trial window.
  */
-export function getTrialDaysRemaining(
-  billing: BillingState,
-): number | null {
+export function getTrialDaysRemaining(billing: BillingState): number | null {
   if (!billing.trialEndsAt || billing.trialStatus !== "active") {
     return null;
   }
@@ -158,3 +187,50 @@ export function getTrialDaysRemaining(
   return days;
 }
 
+/**
+ * Check if a business should have access to features based on billing state.
+ * Returns true if access should be granted, false if restricted.
+ */
+export function hasFeatureAccess(billing: BillingState | null): boolean {
+  if (!billing) return false;
+
+  // If trial is active, grant access
+  if (billing.trialStatus === "active") return true;
+
+  // If has active subscription and not in restricted state, grant access
+  if (
+    billing.hasActiveSubscription &&
+    billing.subscriptionStatus === "active"
+  ) {
+    return true;
+  }
+
+  // If in grace period after payment failure, grant access
+  if (billing.isInGracePeriod) return true;
+
+  // If should restrict features (past grace period), deny access
+  if (billing.shouldRestrictFeatures) return false;
+
+  // Default: deny access if no active subscription or trial
+  return false;
+}
+
+/**
+ * Get grace period days remaining from a BillingState.
+ * Returns null if not in grace period.
+ */
+export function getGracePeriodDaysRemaining(
+  billing: BillingState,
+): number | null {
+  if (!billing.gracePeriodEndsAt || !billing.isInGracePeriod) {
+    return null;
+  }
+
+  const now = new Date();
+  const end = new Date(billing.gracePeriodEndsAt);
+  if (end <= now) return 0;
+
+  const diffMs = end.getTime() - now.getTime();
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return days;
+}

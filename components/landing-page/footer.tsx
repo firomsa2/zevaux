@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Phone, Mail, Twitter, Linkedin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -81,8 +82,13 @@ export function Footer() {
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
-                <Phone className="h-5 w-5 text-primary-foreground" />
+              <div className="relative h-12 w-12">
+                <Image
+                  src="/zevaux-logo-1.png"
+                  alt="Zevaux"
+                  fill
+                  className="object-contain"
+                />
               </div>
               <span className="text-xl font-bold text-foreground">Zevaux</span>
             </Link>

@@ -576,3 +576,34 @@ export async function markWebsiteTrainingComplete(
     website_training_completed: true,
   });
 }
+
+/**
+ * Ensure onboarding_progress record exists for a business
+ * Creates the record if it doesn't exist, otherwise does nothing
+ * This ensures webhook handlers can update progress even if user navigates away
+ */
+export async function ensureOnboardingProgressExists(
+  businessId: string,
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+
+  // Check if record exists
+  const { data: existing } = await supabase
+    .from("onboarding_progress")
+    .select("business_id")
+    .eq("business_id", businessId)
+    .maybeSingle();
+
+  // If record exists, no need to create
+  if (existing) {
+    return { error: null };
+  }
+
+  // Create new record with default values
+  return saveOnboardingProgress(businessId, {
+    step_1_website: false,
+    step_2_business_info: false,
+    step_3_phone_setup: false,
+    step_4_go_live: false,
+  });
+}

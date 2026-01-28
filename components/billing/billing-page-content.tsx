@@ -52,7 +52,13 @@ export function BillingPageContent({
       </TabsContent>
 
       <TabsContent value="usage" className="mt-8">
-        <UsageOverview plan={currentPlan} usage={usage} />
+        {currentPlan ? (
+          <UsageOverview plan={currentPlan} usage={usage} />
+        ) : (
+          <div className="text-center text-sm text-muted-foreground py-8">
+            No current plan. Usage details are unavailable.
+          </div>
+        )}
       </TabsContent>
 
       <TabsContent value="billing" className="mt-8">

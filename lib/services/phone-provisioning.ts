@@ -16,19 +16,58 @@ export class PhoneProvisioningService {
     try {
       console.log(`Starting provisioning for business ${businessId}...`);
 
+      // Helper function to create a fetch with timeout
+      const fetchWithTimeout = async (
+        url: string,
+        options: RequestInit,
+        timeoutMs: number = 30000, // 30 seconds default
+      ): Promise<Response> => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          return response;
+        } catch (error: any) {
+          clearTimeout(timeoutId);
+          if (error.name === "AbortError") {
+            throw new Error(
+              `Request timeout: The webhook did not respond within ${timeoutMs}ms. Please check your network connection and webhook configuration.`,
+            );
+          }
+          if (error.cause?.code === "UND_ERR_CONNECT_TIMEOUT") {
+            throw new Error(
+              `Connection timeout: Unable to connect to the webhook service. Please check your network connection and ensure the webhook URL is accessible.`,
+            );
+          }
+          throw error;
+        }
+      };
+
       // 1. Search for available numbers via N8N Webhook
       console.log("Calling search webhook...");
-      const searchResponse = await fetch(SEARCH_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          countryCode: "US",
-          areaCode,
-        }),
-      });
+      const searchResponse = await fetchWithTimeout(
+        SEARCH_WEBHOOK_URL,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            countryCode: "US",
+            areaCode,
+          }),
+        },
+        30000, // 30 second timeout
+      );
 
       if (!searchResponse.ok) {
-        throw new Error(`Search webhook failed: ${searchResponse.statusText}`);
+        const errorText = await searchResponse.text().catch(() => "");
+        throw new Error(
+          `Search webhook failed (${searchResponse.status}): ${errorText || searchResponse.statusText}`,
+        );
       }
 
       const searchData = await searchResponse.json();
@@ -56,15 +95,20 @@ export class PhoneProvisioningService {
       // 3. Buy and Assign via N8N Webhook
       // The webhook is expected to handle the purchase and the DB assignment
       console.log("Calling buy/assign webhook...");
-      const buyResponse = await fetch(BUY_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          businessId,
-          phoneNumber,
-          friendlyName,
-        }),
-      });
+      const buyResponse = await fetchWithTimeout(
+        BUY_WEBHOOK_URL,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessId,
+            phoneNumber,
+            friendlyName,
+          }),
+        },
+        30000, // 30 second timeout
+      );
+      console.log("🚀 ~ PhoneProvisioningService ~ buyResponse:", buyResponse);
 
       if (!buyResponse.ok) {
         const errorText = await buyResponse.text();
@@ -72,8 +116,11 @@ export class PhoneProvisioningService {
       }
 
       const buyData = await buyResponse.json().catch(() => ({}));
-      const purchasedNumber = buyData.phoneNumber as string | undefined;
+      console.log("🚀 ~ PhoneProvisioningService ~ buyData:", buyData);
+      const purchasedNumber = buyData.phone_number as string | undefined;
+      console.log("🚀 ~ PhoneProvisioningService ~ purchasedNumber:", purchasedNumber);
       const purchasedFriendly = (buyData as any).friendlyName || friendlyName;
+      console.log("🚀 ~ PhoneProvisioningService ~ purchasedFriendly:", purchasedFriendly);
       const channelType = (buyData as any).channelType || "voice";
 
       console.log(
@@ -144,9 +191,15 @@ export class PhoneProvisioningService {
       // 4. Return success and only include phoneNumber if purchased webhook returned it
       console.log("Phone number purchase request sent successfully");
       return { success: true, phoneNumber: purchasedNumber };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Provisioning failed:", error);
-      throw error;
+      // Re-throw with more context if it's not already a descriptive error
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(
+        `Phone provisioning failed: ${error?.message || String(error)}`,
+      );
     }
   }
 }

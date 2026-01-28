@@ -3,7 +3,8 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { getUserBusinessWithRelations } from "@/lib/business";
 import { getBillingStateForUser, getTrialDaysRemaining } from "@/lib/billing";
 import { SubscriptionCard } from "@/components/billing/subscription-card";
-import { BillingPlansComparison } from "@/components/billing/plans-comparison";
+// import { BillingPlansComparison } from "@/components/billing/plans-comparison"; // Switching to PlansOverview
+import { PlansOverview } from "@/components/billing/plans-overview";
 import { UsageOverview } from "@/components/billing/usage-overview";
 import { BillingHistory } from "@/components/billing/billing-history";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import type { Plan } from "@/types/database";
 
 export default async function BillingPage() {
   const supabase = await getSupabaseServer();
@@ -24,7 +26,7 @@ export default async function BillingPage() {
   } = await supabase.auth.getUser();
 
   if (!authUser) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   const businessData = await getUserBusinessWithRelations(authUser.id);
@@ -44,11 +46,14 @@ export default async function BillingPage() {
     .limit(1)
     .single();
 
-  // Fetch all plans
+  // Fetch all plans ordered by price
   const { data: allPlans } = await supabase
     .from("plans")
     .select("*")
     .order("monthly_price", { ascending: true });
+
+  // Filter plans to display (exclude enterprise if not wanted or filter by custom logic)
+  const displayPlans = (allPlans as Plan[])?.filter(p => ["starter", "basic", "pro", "custom"].includes(p.slug || p.id)) || [];
 
   // Fetch invoices
   const { data: invoices } = await supabase
@@ -59,7 +64,8 @@ export default async function BillingPage() {
 
   const usageData = {
     minutesUsed: usage?.minutes_used || 0,
-    callsCount: usage?.calls_count || 0,
+    purchasedMinutes: usage?.purchased_minutes || 0,
+    callsCount: usage?.calls_made || 0,
     activePhoneNumbers: usage?.active_phone_numbers || 0,
     teamMembers: usage?.team_members_count || 0,
   };
@@ -97,40 +103,19 @@ export default async function BillingPage() {
 
       {/* Usage Overview */}
       {plan && <UsageOverview plan={plan} usage={usageData} />}
+      
+      {/* Plans Overview */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">Available Plans</h2>
+        <PlansOverview 
+            business={business}
+            currentPlan={plan}
+            plans={displayPlans}
+        />
+      </div>
 
-      {/* Plans Comparison */}
-      {allPlans && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Available Plans</h2>
-          <BillingPlansComparison
-            allPlans={allPlans}
-            currentPlan={business.billing_plan}
-            businessId={business.id}
-          />
-        </div>
-      )}
-
-      {/* Billing History */}
-      {invoices && <BillingHistory invoices={invoices} />}
-
-      {/* Support Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" />
-            Need Help?
-          </CardTitle>
-          <CardDescription>
-            Contact our support team for billing questions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Button variant="outline">Email Support</Button>
-            <Button variant="outline">Schedule Call</Button>
-          </div>
-        </CardContent>
-      </Card>
+       {/* Billing History (Invoices) */}
+       {/* <BillingHistory invoices={invoices || []} /> */}
     </main>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import {
   Bot,
   Files,
@@ -258,13 +259,39 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [user, setUser] = React.useState<User | null>(null);
-  const [teams, setTeams] = React.useState(data.teams);
-  const [phoneNumber, setPhoneNumber] = React.useState<string | null>(null);
+export function AppSidebar({
+  user: initialUser,
+  trialDaysLeft: initialTrialDays,
+  businessData,
+  phoneNumber: initialPhone,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  user?: User | null;
+  trialDaysLeft?: number | null;
+  businessData?: {
+    name: string;
+    plan: string;
+  } | null;
+  phoneNumber?: string | null;
+}) {
+  const [user, setUser] = React.useState<User | null>(initialUser || null);
+  const [teams, setTeams] = React.useState(
+    businessData
+      ? [
+          {
+            name: businessData.name,
+            logo: Building,
+            plan: businessData.plan,
+          },
+        ]
+      : data.teams,
+  );
+  const [phoneNumber, setPhoneNumber] = React.useState<string | null>(
+    initialPhone || null,
+  );
   const [trialDaysRemaining, setTrialDaysRemaining] = React.useState<
     number | null
-  >(null);
+  >(initialTrialDays ?? null);
   const { toggleSidebar, state } = useSidebar();
   const [copied, setCopied] = React.useState(false);
 
@@ -278,24 +305,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
-  console.log("🚀 ~ Sidebar render, user:", user, "teams:", teams);
   React.useEffect(() => {
     async function loadData() {
       try {
-        const {
-          user: userData,
-          businessId,
-          error,
-        } = await getUserWithBusiness();
-        console.log("🚀 ~ Sidebar fetched user with business:", {
-          userData,
-          businessId,
-          error,
-        });
+        if (!user) {
+          const { user: userData, error } = await getUserWithBusiness();
 
-        if (userData) {
-          setUser(userData);
+          if (userData) {
+            setUser(userData);
+          }
         }
+
+        const { businessId } = await getUserWithBusiness();
 
         if (businessId) {
           const supabase = createClient();
@@ -349,7 +370,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               }
             }
           } catch (billingError) {
-            console.error("Error fetching billing state in sidebar:", billingError);
+            console.error(
+              "Error fetching billing state in sidebar:",
+              billingError,
+            );
           }
         }
         console.log("🚀 ~ Sidebar updated teams:", teams);
@@ -376,8 +400,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem className="flex items-center gap-2 group-data-[state=collapsed]:flex-col group-data-[state=collapsed]:gap-4">
             <SidebarMenuButton size="lg" asChild>
               <a href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-sidebar-primary-foreground">
-                  <ActiveLogo className="size-4" />
+                <div className="relative flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <Image
+                    src="/zevaux-logo-1.png"
+                    alt="Zevaux"
+                    fill
+                    className="h-8 w-6"
+                  />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-bold text-lg tracking-tight text-primary">

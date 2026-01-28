@@ -2178,14 +2178,14 @@ export default function PhoneNumbersPage() {
   const [showBuyDialog, setShowBuyDialog] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
   const [availableNumbers, setAvailableNumbers] = useState<AvailableNumber[]>(
-    []
+    [],
   );
   const [selectedNumber, setSelectedNumber] = useState<string | null>(null);
   const [phoneNumberName, setPhoneNumberName] = useState("");
   const [searchPrefix, setSearchPrefix] = useState("");
   const [openCountryDropdown, setOpenCountryDropdown] = useState(false);
   const [channelType, setChannelType] = useState<"voice" | "sms" | "whatsapp">(
-    "voice"
+    "voice",
   );
 
   // Escalation number states
@@ -2272,7 +2272,7 @@ export default function PhoneNumbersPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(searchData),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -2286,7 +2286,7 @@ export default function PhoneNumbersPage() {
         setAvailableNumbers(result);
         if (result.length === 0) {
           setError(
-            "No numbers found for your search criteria. Try a different area code or country."
+            "No numbers found for your search criteria. Try a different area code or country.",
           );
         }
       } else if (result.error) {
@@ -2313,7 +2313,7 @@ export default function PhoneNumbersPage() {
   const handlePurchaseNumber = async () => {
     if (!selectedNumber || !businessId || !phoneNumberName.trim()) {
       setError(
-        "Please select a number, provide a name, and select channel type"
+        "Please select a number, provide a name, and select channel type",
       );
       return;
     }
@@ -2339,7 +2339,7 @@ export default function PhoneNumbersPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(purchaseData),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -2353,7 +2353,7 @@ export default function PhoneNumbersPage() {
         console.log("✅ Got number successfully, creating local record...");
 
         setSuccess(
-          `Successfully got ${selectedNumber}! The number is being configured...`
+          `Successfully got ${selectedNumber}! The number is being configured...`,
         );
         setShowBuyDialog(false);
         resetPurchaseForm();
@@ -2367,11 +2367,11 @@ export default function PhoneNumbersPage() {
             if (phones && phones.length === 1 && !business?.phone_main) {
               console.log(
                 "Auto-setting primary number:",
-                phones[0].phone_number
+                phones[0].phone_number,
               );
               await phoneNumberService.setAsPrimary(
                 phones[0].phone_number,
-                businessId
+                businessId,
               );
             }
           } catch (e) {
@@ -2412,7 +2412,7 @@ export default function PhoneNumbersPage() {
     const phoneRegex = /^\+[1-9]\d{1,14}$/;
     if (!phoneRegex.test(escalationNumber)) {
       setError(
-        "Please enter a valid phone number with country code (e.g., +1234567890)"
+        "Please enter a valid phone number with country code (e.g., +1234567890)",
       );
       return;
     }
@@ -2423,7 +2423,7 @@ export default function PhoneNumbersPage() {
     try {
       const { error } = await phoneNumberService.updateEscalationNumber(
         businessId,
-        escalationNumber
+        escalationNumber,
       );
 
       if (error) {
@@ -2434,9 +2434,8 @@ export default function PhoneNumbersPage() {
       setShowEscalationDialog(false);
 
       // Refresh business data
-      const { data: businessData } = await phoneNumberService.getBusiness(
-        businessId
-      );
+      const { data: businessData } =
+        await phoneNumberService.getBusiness(businessId);
       if (businessData) {
         setBusiness(businessData);
       }
@@ -2460,9 +2459,8 @@ export default function PhoneNumbersPage() {
     setError(null);
 
     try {
-      const { error } = await phoneNumberService.removeEscalationNumber(
-        businessId
-      );
+      const { error } =
+        await phoneNumberService.removeEscalationNumber(businessId);
 
       if (error) {
         throw error;
@@ -2474,9 +2472,8 @@ export default function PhoneNumbersPage() {
       setShowDeleteEscalationAlert(false);
 
       // Refresh business data
-      const { data: businessData } = await phoneNumberService.getBusiness(
-        businessId
-      );
+      const { data: businessData } =
+        await phoneNumberService.getBusiness(businessId);
       if (businessData) {
         setBusiness(businessData);
       }
@@ -2493,7 +2490,7 @@ export default function PhoneNumbersPage() {
 
     if (phone.is_primary) {
       setError(
-        "Cannot delete the primary phone number. Set another number as primary first."
+        "Cannot delete the primary phone number. Set another number as primary first.",
       );
       return;
     }
@@ -2516,12 +2513,12 @@ export default function PhoneNumbersPage() {
             phoneNumber: phone.phone_number,
             phoneId: phone.id,
           }),
-        }
+        },
       );
 
       if (!releaseResponse.ok) {
         console.warn(
-          "Failed to release number from provider, continuing with local deletion"
+          "Failed to release number from provider, continuing with local deletion",
         );
       }
     } catch (releaseError) {
@@ -2531,7 +2528,7 @@ export default function PhoneNumbersPage() {
     // Delete local record
     const { error: deleteError } = await phoneNumberService.deletePhoneNumber(
       phone.id,
-      businessId
+      businessId,
     );
 
     if (deleteError) {
@@ -2545,13 +2542,13 @@ export default function PhoneNumbersPage() {
   const handleEdit = async (phone: PhoneNumber) => {
     const newName = prompt(
       "Enter new name for the phone endpoint:",
-      phone.name || phone.phone_number
+      phone.name || phone.phone_number,
     );
     if (newName && businessId) {
       const { error: updateError } = await phoneNumberService.updatePhoneNumber(
         phone.id,
         { name: newName },
-        businessId
+        businessId,
       );
 
       if (updateError) {
@@ -2569,7 +2566,7 @@ export default function PhoneNumbersPage() {
     // Prevent deactivating primary number
     if (phone.is_primary && phone.is_active) {
       setError(
-        "Cannot deactivate the primary phone number. Set another number as primary first."
+        "Cannot deactivate the primary phone number. Set another number as primary first.",
       );
       return;
     }
@@ -2578,14 +2575,14 @@ export default function PhoneNumbersPage() {
     const { error: updateError } = await phoneNumberService.updatePhoneNumber(
       phone.id,
       { is_active: newStatus },
-      businessId
+      businessId,
     );
 
     if (updateError) {
       setError(`Failed to update status: ${updateError.message}`);
     } else {
       setSuccess(
-        `Phone endpoint ${newStatus ? "activated" : "deactivated"} successfully`
+        `Phone endpoint ${newStatus ? "activated" : "deactivated"} successfully`,
       );
       loadPhoneEndpoints();
     }
@@ -2596,7 +2593,7 @@ export default function PhoneNumbersPage() {
 
     const { error } = await phoneNumberService.setAsPrimary(
       phone.phone_number,
-      businessId
+      businessId,
     );
 
     if (error) {
@@ -2875,7 +2872,7 @@ export default function PhoneNumbersPage() {
                                           "mr-2 h-4 w-4",
                                           selectedCountry.code === country.code
                                             ? "opacity-100"
-                                            : "opacity-0"
+                                            : "opacity-0",
                                         )}
                                       />
                                       <span className="mr-2">
@@ -2928,7 +2925,7 @@ export default function PhoneNumbersPage() {
                               "cursor-pointer transition-all hover:border-primary",
                               selectedNumber === number.phoneNumber
                                 ? "border-primary border-2 bg-primary/5"
-                                : ""
+                                : "",
                             )}
                             onClick={() =>
                               setSelectedNumber(number.phoneNumber)

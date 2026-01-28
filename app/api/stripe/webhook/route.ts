@@ -23,62 +23,143 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createClient();
 
+  // Retry configuration
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 1000; // 1 second
+
+  // Helper function to retry operations
+  async function retryOperation<T>(
+    operation: () => Promise<T>,
+    operationName: string,
+    retries = MAX_RETRIES,
+  ): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        lastError = error;
+        const isRetryable = 
+          error?.code === "PGRST_116" || // PostgREST connection error
+          error?.message?.includes("timeout") ||
+          error?.message?.includes("ECONNREFUSED") ||
+          error?.message?.includes("network");
+
+        if (isRetryable && attempt < retries) {
+          console.warn(
+            `[Webhook] ${operationName} failed (attempt ${attempt}/${retries}), retrying...`,
+            error.message,
+          );
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+          continue;
+        }
+
+        // Not retryable or max retries reached
+        throw error;
+      }
+    }
+
+    throw lastError;
+  }
+
   try {
     switch (event.type) {
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionCreated(supabase, subscription);
-        console.log("[v0] Handled subscription created event");
+        await retryOperation(
+          () => handleSubscriptionCreated(supabase, subscription),
+          "handleSubscriptionCreated",
+        );
+        console.log("[Webhook] ✅ Handled subscription created event:", subscription.id);
         break;
       }
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionUpdate(supabase, subscription);
-        console.log("[v0] Handled subscription updated event");
+        await retryOperation(
+          () => handleSubscriptionUpdate(supabase, subscription),
+          "handleSubscriptionUpdate",
+        );
+        console.log("[Webhook] ✅ Handled subscription updated event:", subscription.id);
         break;
       }
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionCanceled(supabase, subscription);
-        console.log("[v0] Handled subscription canceled event");
+        await retryOperation(
+          () => handleSubscriptionCanceled(supabase, subscription),
+          "handleSubscriptionCanceled",
+        );
+        console.log("[Webhook] ✅ Handled subscription canceled event:", subscription.id);
         break;
       }
       case "invoice.created": {
         const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoiceCreated(supabase, invoice);
-        console.log("[v0] Handled invoice created event");
+        await retryOperation(
+          () => handleInvoiceCreated(supabase, invoice),
+          "handleInvoiceCreated",
+        );
+        console.log("[Webhook] ✅ Handled invoice created event:", invoice.id);
         break;
       }
       case "invoice.finalized": {
         const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoiceFinalized(supabase, invoice);
-        console.log("[v0] Handled invoice finalized event");
+        await retryOperation(
+          () => handleInvoiceFinalized(supabase, invoice),
+          "handleInvoiceFinalized",
+        );
+        console.log("[Webhook] ✅ Handled invoice finalized event:", invoice.id);
         break;
       }
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoicePaid(supabase, invoice);
-        console.log("[v0] Handled invoice payment succeeded event");
+        await retryOperation(
+          () => handleInvoicePaid(supabase, invoice),
+          "handleInvoicePaid",
+        );
+        console.log("[Webhook] ✅ Handled invoice payment succeeded event:", invoice.id);
         break;
       }
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoiceFailed(supabase, invoice);
-        console.log("[v0] Handled invoice payment failed event");
+        await retryOperation(
+          () => handleInvoiceFailed(supabase, invoice),
+          "handleInvoiceFailed",
+        );
+        console.log("[Webhook] ✅ Handled invoice payment failed event:", invoice.id);
         break;
       }
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutComplete(supabase, session);
-        console.log("[v0] Handled checkout session completed event");
+        await retryOperation(
+          () => handleCheckoutComplete(supabase, session),
+          "handleCheckoutComplete",
+        );
+        console.log("[Webhook] ✅ Handled checkout session completed event:", session.id);
         break;
       }
+      default:
+        console.log(`[Webhook] ⚠️ Unhandled event type: ${event.type}`);
     }
-  } catch (error) {
-    console.error("Error processing webhook:", error);
+  } catch (error: any) {
+    // Log detailed error information
+    console.error("[Webhook] ❌ Error processing webhook:", {
+      eventType: event.type,
+      eventId: event.id,
+      error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+
+    // Return 500 to trigger Stripe's retry mechanism
+    // Stripe will automatically retry failed webhooks
     return NextResponse.json(
-      { error: "Webhook processing failed" },
-      { status: 500 }
+      { 
+        error: "Webhook processing failed",
+        eventId: event.id,
+        eventType: event.type,
+        // Include error details in development
+        details: process.env.NODE_ENV === "development" ? error.message : undefined,
+      },
+      { status: 500 },
     );
   }
 
@@ -88,7 +169,7 @@ export async function POST(req: NextRequest) {
 
 // Helper function to safely convert Stripe timestamps
 function safeDateFromTimestamp(
-  timestamp: number | null | undefined
+  timestamp: number | null | undefined,
 ): Date | null {
   if (!timestamp || typeof timestamp !== "number" || timestamp <= 0) {
     return null;
@@ -232,12 +313,12 @@ function safeToISOString(date: Date | null): string | null {
 
 async function handleCheckoutComplete(
   supabase: any,
-  session: Stripe.Checkout.Session
+  session: Stripe.Checkout.Session,
 ) {
   if (!session.subscription || !session.customer) {
     console.error(
       "[v0] Checkout session missing subscription or customer:",
-      session
+      session,
     );
     return;
   }
@@ -254,14 +335,14 @@ async function handleCheckoutComplete(
     console.log(
       "[v0] Stripe customer not found for:",
       session.customer,
-      customerError
+      customerError,
     );
     return;
   }
 
   try {
     const subscription = (await stripe.subscriptions.retrieve(
-      session.subscription as string
+      session.subscription as string,
     )) as Stripe.Subscription;
 
     const priceId = subscription.items.data[0]?.price.id;
@@ -277,20 +358,14 @@ async function handleCheckoutComplete(
       return;
     }
 
-    // Get period dates from the FIRST subscription item (not from subscription directly)
-    const subscriptionItem = subscription.items.data[0];
-
-    // Use the subscription item's period dates, fallback to subscription dates if not available
-    const currentPeriodStart =
-      (subscriptionItem as any)?.current_period_start ||
-      (subscriptionItem as any)?.current_period_start;
-    const currentPeriodEnd =
-      (subscriptionItem as any)?.current_period_end ||
-      (subscriptionItem as any)?.current_period_end;
-
-    // Use safe date conversion with the correct values
-    const periodStartDate = safeDateFromTimestamp(currentPeriodStart);
-    const periodEndDate = safeDateFromTimestamp(currentPeriodEnd);
+    // Get period dates directly from the subscription object
+    // Note: current_period_start and current_period_end are on the subscription's 'Subscription' object (unix timestamps), but they may not be typed in the Stripe type. Use bracket notation to avoid TS error.
+    const periodStartDate = safeDateFromTimestamp(
+      (subscription as any)["current_period_start"],
+    );
+    const periodEndDate = safeDateFromTimestamp(
+      (subscription as any)["current_period_end"],
+    );
     const trialEndDate = safeDateFromTimestamp(subscription.trial_end);
 
     const { error: subError } = await supabase.from("subscriptions").upsert(
@@ -306,7 +381,7 @@ async function handleCheckoutComplete(
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "business_id" }
+      { onConflict: "business_id" },
     );
 
     if (subError) {
@@ -339,10 +414,10 @@ async function handleCheckoutComplete(
         team_members_count: 0,
         period_start: new Date().toISOString(),
         period_end: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
+          Date.now() + 30 * 24 * 60 * 60 * 1000,
         ).toISOString(),
       },
-      { onConflict: "business_id" }
+      { onConflict: "business_id" },
     );
 
     if (usageError) {
@@ -353,7 +428,7 @@ async function handleCheckoutComplete(
       "[v0] Subscription created for business:",
       stripeCustomer.business_id,
       "with plan:",
-      plan.slug
+      plan.slug,
     );
   } catch (error) {
     console.error("[v0] Error in handleCheckoutComplete:", error);
@@ -418,7 +493,7 @@ async function handleCheckoutComplete(
 
 async function handleSubscriptionCreated(
   supabase: any,
-  subscription: Stripe.Subscription
+  subscription: Stripe.Subscription,
 ) {
   const { data: stripeCustomer } = await supabase
     .from("stripe_customers")
@@ -438,18 +513,13 @@ async function handleSubscriptionCreated(
     .eq("stripe_price_id", priceId)
     .single();
 
-  // Get period dates from the FIRST subscription item
-  const subscriptionItem = subscription.items.data[0];
-  const currentPeriodStart =
-    (subscriptionItem as any)?.current_period_start ||
-    (subscriptionItem as any)?.current_period_start;
-  const currentPeriodEnd =
-    (subscriptionItem as any)?.current_period_end ||
-    (subscriptionItem as any)?.current_period_end;
-
-  const periodStartDate = safeDateFromTimestamp(currentPeriodStart);
-  const periodEndDate = safeDateFromTimestamp(currentPeriodEnd);
-  const trialEndDate = safeDateFromTimestamp(subscription.trial_end);
+  // Get period dates directly from the subscription object
+  // Note: current_period_start and current_period_end are on the subscription, not on items
+  const periodStartDate = safeDateFromTimestamp(
+    (subscription as any).current_period_start,
+  );
+  const periodEndDate = safeDateFromTimestamp((subscription as any).current_period_end);
+  const trialEndDate = safeDateFromTimestamp((subscription as any).trial_end);
 
   await supabase.from("subscriptions").upsert(
     {
@@ -464,7 +534,7 @@ async function handleSubscriptionCreated(
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "business_id" }
+    { onConflict: "business_id" },
   );
 
   await supabase
@@ -517,7 +587,7 @@ async function handleSubscriptionCreated(
 
 async function handleSubscriptionUpdate(
   supabase: any,
-  subscription: Stripe.Subscription
+  subscription: Stripe.Subscription,
 ) {
   const { data: stripeCustomer } = await supabase
     .from("stripe_customers")
@@ -526,27 +596,37 @@ async function handleSubscriptionUpdate(
     .single();
 
   if (stripeCustomer) {
-    // Get period dates from the FIRST subscription item
-    const subscriptionItem = subscription.items.data[0];
-    const currentPeriodStart =
-      (subscriptionItem as any)?.current_period_start ||
-      (subscriptionItem as any)?.subscription.current_period_start;
-    const currentPeriodEnd =
-      (subscriptionItem as any)?.current_period_end ||
-      (subscriptionItem as any)?.subscription.current_period_end;
+    // Get the plan from the subscription's price
+    const priceId = subscription.items.data[0]?.price.id;
+    const { data: plan } = await supabase
+      .from("plans")
+      .select("id, slug")
+      .eq("stripe_price_id", priceId)
+      .single();
 
-    const periodStartDate = safeDateFromTimestamp(currentPeriodStart);
-    const periodEndDate = safeDateFromTimestamp(currentPeriodEnd);
+    // Get period dates directly from the subscription object
+    // Note: current_period_start and current_period_end are on the subscription, not on items
+    const periodStartDate = safeDateFromTimestamp(
+      (subscription as any).current_period_start,
+    );
+    const periodEndDate = safeDateFromTimestamp(
+      (subscription as any).current_period_end,
+    );
     const trialEndDate = safeDateFromTimestamp(subscription.trial_end);
 
     await supabase
       .from("subscriptions")
       .update({
         stripe_subscription_id: subscription.id,
+        plan_id: plan?.id, // Update plan_id when subscription changes
         status: subscription.status,
         current_period_start: safeToISOString(periodStartDate),
         current_period_end: safeToISOString(periodEndDate),
         trial_end: safeToISOString(trialEndDate),
+        cancel_at: subscription.cancel_at
+          ? safeToISOString(safeDateFromTimestamp(subscription.cancel_at))
+          : null,
+        cancel_at_period_end: subscription.cancel_at_period_end || false,
         updated_at: new Date().toISOString(),
       })
       .eq("business_id", stripeCustomer.business_id);
@@ -554,6 +634,7 @@ async function handleSubscriptionUpdate(
     await supabase
       .from("businesses")
       .update({
+        billing_plan: plan?.slug, // Update billing_plan when subscription changes
         subscription_status: subscription.status,
       })
       .eq("id", stripeCustomer.business_id);
@@ -562,7 +643,7 @@ async function handleSubscriptionUpdate(
 
 async function handleSubscriptionCanceled(
   supabase: any,
-  subscription: Stripe.Subscription
+  subscription: Stripe.Subscription,
 ) {
   const { data: stripeCustomer } = await supabase
     .from("stripe_customers")
@@ -742,6 +823,45 @@ async function handleInvoicePaid(supabase: any, invoice: Stripe.Invoice) {
     await supabase
       .from("invoices")
       .upsert(invoiceData, { onConflict: "stripe_invoice_id" });
+
+    // If payment succeeded, clear payment failure metadata and restore subscription
+    if (invoiceAny.subscription) {
+      const { data: existingSub } = await supabase
+        .from("subscriptions")
+        .select("metadata, status")
+        .eq("stripe_subscription_id", invoiceAny.subscription)
+        .maybeSingle();
+
+      if (existingSub) {
+        const existingMetadata = (existingSub.metadata as any) || {};
+        // Remove payment failure tracking when payment succeeds
+        const { payment_failed_at, payment_failure_count, ...cleanedMetadata } =
+          existingMetadata;
+
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: "active", // Restore to active when payment succeeds
+            metadata: cleanedMetadata,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", invoiceAny.subscription);
+
+        // Update business subscription status
+        await supabase
+          .from("businesses")
+          .update({
+            subscription_status: "active",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", stripeCustomer.business_id);
+
+        console.log(
+          "[v0] Payment succeeded, subscription restored for business:",
+          stripeCustomer.business_id,
+        );
+      }
+    }
   }
 }
 
@@ -775,6 +895,54 @@ async function handleInvoiceFailed(supabase: any, invoice: Stripe.Invoice) {
     if (invoiceAny.subscription) {
       invoiceData.subscription_id = invoiceAny.subscription;
     }
+
+    // Update invoice record
+    await supabase
+      .from("invoices")
+      .upsert(invoiceData, { onConflict: "stripe_invoice_id" });
+
+    // Get existing subscription to read current metadata
+    const { data: existingSub } = await supabase
+      .from("subscriptions")
+      .select("metadata")
+      .eq("business_id", stripeCustomer.business_id)
+      .maybeSingle();
+
+    const existingMetadata = (existingSub?.metadata as any) || {};
+    const failureCount = (existingMetadata.payment_failure_count || 0) + 1;
+
+    // Update subscription status to past_due and track payment failure date
+    const now = new Date().toISOString();
+    await supabase
+      .from("subscriptions")
+      .update({
+        status: "past_due",
+        updated_at: now,
+        metadata: {
+          ...existingMetadata,
+          payment_failed_at: now,
+          payment_failure_count: failureCount,
+        },
+      })
+      .eq("business_id", stripeCustomer.business_id);
+
+    // Update business subscription status
+    await supabase
+      .from("businesses")
+      .update({
+        subscription_status: "past_due",
+        updated_at: now,
+      })
+      .eq("id", stripeCustomer.business_id);
+
+    console.log(
+      "[v0] Payment failed for business:",
+      stripeCustomer.business_id,
+      "Invoice:",
+      invoice.id,
+      "Failure count:",
+      failureCount,
+    );
 
     await supabase
       .from("invoices")

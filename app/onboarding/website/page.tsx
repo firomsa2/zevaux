@@ -42,7 +42,7 @@ export default async function WebsiteOnboardingPage() {
         timezone: "America/New_York",
         default_language: "en-US",
         supported_languages: ["en-US"],
-        tone: "professional",
+        tone: "Warm, friendly, simple, professional",
         billing_plan: "starter",
         hipaa_mode: false,
       })
@@ -52,7 +52,7 @@ export default async function WebsiteOnboardingPage() {
     if (createError || !newBusiness) {
       console.error(
         "Failed to create business during onboarding:",
-        createError?.message
+        createError?.message,
       );
       // Fallback
       return <div>Error creating business profile</div>;

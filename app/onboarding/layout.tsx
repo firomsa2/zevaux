@@ -40,7 +40,7 @@ export default async function OnboardingLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/(auth)/login");
+    redirect("/login");
   }
 
   const { data: userData } = await supabase

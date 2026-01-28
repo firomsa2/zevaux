@@ -1,3 +1,5 @@
+export const TRIAL_PERIOD_DAYS = 7;
+
 export const INDUSTRIES = [
   "Accounting & Finance",
   "Automotive",

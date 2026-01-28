@@ -131,12 +131,18 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { getBillingStateForUser } from "@/lib/billing";
+import {
+  getBillingStateForUser,
+  getTrialDaysRemaining,
+  getBillingStateForBusiness,
+} from "@/lib/billing";
 import { createClient } from "@/utils/supabase/server";
 import { Bell, HelpCircle } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { OnboardingGuard } from "@/components/onboarding/onboarding-guard";
 import { getOnboardingProgress } from "@/utils/onboarding";
+import { DashboardLayoutWrapper } from "@/components/dashboard/layout-wrapper";
 // import { useState } from "react";
 
 export default async function DashboardLayout({
@@ -186,6 +192,61 @@ export default async function DashboardLayout({
 
   // Resolve billing state to enforce trial / subscription gating at layout level.
   const billingState = await getBillingStateForUser(user.id);
+  const trialDaysLeft = billingState
+    ? getTrialDaysRemaining(billingState)
+    : null;
+  const showTrialBanner =
+    typeof trialDaysLeft === "number" && trialDaysLeft >= 0;
+
+  let businessData = null;
+  let phoneNumber = null;
+  let nudgeUsageData = null; // For Nudge
+
+  if (billingState?.businessId) {
+    const { data: b } = await supabase
+      .from("businesses")
+      .select("name, billing_plan, phone_main")
+      .eq("id", billingState.businessId)
+      .single();
+
+    if (b) {
+      businessData = { name: b.name, plan: b.billing_plan || "Pro" };
+      phoneNumber = b.phone_main || null;
+
+      if (!phoneNumber) {
+        // fetch from endpoints if not in business table
+        const { data: endpoints } = await supabase
+          .from("phone_endpoints")
+          .select("phone_number")
+          .eq("business_id", billingState.businessId)
+          .eq("status", "active")
+          .limit(1);
+        if (endpoints && endpoints.length > 0) {
+          phoneNumber = endpoints[0].phone_number;
+        }
+      }
+
+      // Fetch usage for Nudge
+      const { data: usage } = await supabase
+        .from("usage_tracking")
+        .select("minutes_used, purchased_minutes")
+        .eq("business_id", billingState.businessId)
+        .order("period_end", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (usage) {
+        nudgeUsageData = {
+          businessId: billingState.businessId,
+          usage: {
+            minutesUsed: usage.minutes_used || 0,
+            purchasedMinutes: usage.purchased_minutes || 0,
+            planSlug: b.billing_plan || "starter",
+          },
+        };
+      }
+    }
+  }
 
   // If trial has expired and there's no active subscription, we still allow access
   // to the dashboard shell but expect individual pages/APIs to enforce billing
@@ -197,15 +258,36 @@ export default async function DashboardLayout({
     <OnboardingGuard completedSteps={completedSteps}>
       <div className="flex h-screen bg-background">
         <SidebarProvider>
-          <AppSidebar />
+          <AppSidebar
+            user={user}
+            trialDaysLeft={trialDaysLeft}
+            businessData={businessData}
+            phoneNumber={phoneNumber}
+          />
           <SidebarInset className="overflow-hidden">
-            <header className="flex h-14 items-center gap-2 border-b bg-background px-4 md:hidden">
-              <SidebarTrigger />
-              <div className="font-semibold text-primary">Zevaux</div>
-            </header>
-            <main className="flex-1 h-full overflow-y-auto">
-              <div className="p-8 max-w-7xl mx-auto w-full">{children}</div>
-            </main>
+            <DashboardLayoutWrapper businessData={nudgeUsageData}>
+              {showTrialBanner && (
+                <div className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium py-2 px-4 text-center">
+                  <span className="font-bold border border-white/20 dark:border-black/10 bg-white/10 dark:bg-black/5 px-2 py-0.5 rounded text-xs mr-2">
+                    TRIAL ACTIVE
+                  </span>
+                  You have {trialDaysLeft} days remaining in your free trial.{" "}
+                  <Link
+                    href="/dashboard/billing"
+                    className="underline underline-offset-4 hover:text-zinc-300 dark:hover:text-zinc-600 transition-colors font-semibold"
+                  >
+                    Upgrade now for full access.
+                  </Link>
+                </div>
+              )}
+              <header className="flex h-14 items-center gap-2 border-b bg-background px-4 md:hidden">
+                <SidebarTrigger />
+                <div className="font-semibold text-primary">Zevaux</div>
+              </header>
+              <main className="flex-1 h-full overflow-y-auto">
+                <div className="p-8 max-w-7xl mx-auto w-full">{children}</div>
+              </main>
+            </DashboardLayoutWrapper>
           </SidebarInset>
         </SidebarProvider>
       </div>

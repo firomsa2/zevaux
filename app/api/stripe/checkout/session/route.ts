@@ -66,6 +66,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for existing active subscription to prevent duplicates
+    const { data: existingSubscription } = await supabase
+      .from("subscriptions")
+      .select("stripe_subscription_id, status")
+      .eq("business_id", businessId)
+      .in("status", ["active", "trialing", "past_due"])
+      .maybeSingle();
+
+    if (existingSubscription) {
+      // User already has an active subscription - redirect to Billing Portal
+      // where they can change plans, update payment method, or cancel
+      console.log(
+        "[v0] Existing subscription found, redirecting to Billing Portal",
+      );
+      return NextResponse.json(
+        {
+          error:
+            "You already have an active subscription. Please use the Billing Portal to change your plan.",
+          redirectToPortal: true,
+          businessId,
+        },
+        { status: 400 },
+      );
+    }
+
     let { data: customer, error: customerError } = await supabase
       .from("stripe_customers")
       .select("stripe_customer_id")
@@ -112,11 +137,59 @@ export async function POST(request: NextRequest) {
       success: true,
       url: session.url,
     });
-  } catch (error) {
-    console.error("[v0] Error creating checkout session:", error);
+  } catch (error: any) {
+    // Enhanced error logging
+    const errorDetails = {
+      message: error?.message || "Unknown error",
+      code: error?.code,
+      type: error?.type,
+      // businessId: typeof businessId !== "undefined" ? businessId : null,
+      // planSlug: typeof planSlug !== "undefined" ? planSlug : null,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.error("[Checkout] Error creating checkout session:", errorDetails);
+
+    // Handle specific Stripe errors
+    if (error?.type === "StripeCardError") {
+      return NextResponse.json(
+        {
+          error: "Payment method error",
+          message: error.message || "Your card was declined. Please try a different payment method.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (error?.type === "StripeRateLimitError") {
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded",
+          message: "Too many requests. Please try again in a moment.",
+        },
+        { status: 429 },
+      );
+    }
+
+    if (error?.type === "StripeAPIError") {
+      return NextResponse.json(
+        {
+          error: "Payment service error",
+          message: "Unable to process payment. Please try again or contact support.",
+        },
+        { status: 503 },
+      );
+    }
+
+    // Generic error response
     return NextResponse.json(
-      { error: "Internal server error", details: String(error) },
-      { status: 500 }
+      {
+        error: "Internal server error",
+        message: "Failed to create checkout session. Please try again.",
+        // Include details in development only
+        details: process.env.NODE_ENV === "development" ? errorDetails : undefined,
+      },
+      { status: 500 },
     );
   }
 }

@@ -161,6 +161,10 @@ export function NavUser({
   const router = useRouter();
   const { setTheme } = useTheme();
 
+  const handleBilling = () => {
+    router.push("/dashboard/billing");
+  };
+
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -228,12 +232,9 @@ export function NavUser({
                   Account
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleBilling}>
                 <CreditCard className="mr-2 h-4 w-4" />
-                {/* it have to redirect to billing page */}
-                <Link href="/dashboard/billing" className="flex items-center">
-                  Billing
-                </Link>
+                Billing
               </DropdownMenuItem>
               {/* <DropdownMenuItem>
                 <Bell className="mr-2 h-4 w-4" />

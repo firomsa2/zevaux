@@ -93,28 +93,28 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (planData) {
-        if (planSlug === "starter") {
-          const { error: usageError } = await supabase
-            .from("usage_tracking")
-            .upsert(
-              {
-                business_id: businessId,
-                plan_id: planData.id,
-                minutes_used: 0,
-                calls_made: 0,
-                active_phone_numbers: 0,
-                team_members_count: 0,
-                period_start: new Date().toISOString(),
-                period_end: new Date(
-                  Date.now() + 30 * 24 * 60 * 60 * 1000,
-                ).toISOString(),
-              },
-              { onConflict: "business_id" },
-            );
+        // Create usage tracking for ANY selected plan
+        const { error: usageError } = await supabase
+          .from("usage_tracking")
+          .upsert(
+            {
+              business_id: businessId,
+              plan_id: planData.id,
+              minutes_used: 0,
+              purchased_minutes: 0,
+              calls_made: 0,
+              active_phone_numbers: 0, // Will be updated by phone provisioning
+              team_members_count: 0,
+              period_start: new Date().toISOString(),
+              period_end: new Date(
+                Date.now() + 30 * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+            },
+            { onConflict: "business_id" },
+          );
 
-          if (usageError) {
-            console.error("[v0] Error creating usage tracking:", usageError);
-          }
+        if (usageError) {
+          console.error("[v0] Error creating usage tracking:", usageError);
         }
       } else {
         console.error("[v0] Plan not found for slug:", planSlug);

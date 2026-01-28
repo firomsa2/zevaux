@@ -1,3 +1,116 @@
+// import { DashboardContent } from "@/components/dashboard/content";
+// import { createClient } from "@/utils/supabase/server";
+// import { redirect } from "next/navigation";
+// import { getOnboardingProgress } from "@/utils/onboarding";
+// import { getBillingStateForUser, getTrialDaysRemaining } from "@/lib/billing";
+
+// export default async function Page() {
+//   const supabase = await createClient();
+//   const {
+//     data: { user },
+//   } = await supabase.auth.getUser();
+//   if (!user) {
+//     redirect("/login");
+//   }
+
+//   // Get user's business_id
+//   const { data: userData } = await supabase
+//     .from("users")
+//     .select("business_id")
+//     .eq("id", user.id)
+//     .single();
+
+//   const businessId = userData?.business_id;
+
+//   const dashboardData = {
+//     totalCalls: 0,
+//     avgDuration: "0m",
+//     successRate: "0%",
+//     recentCalls: [] as any[],
+//     isSetupComplete: false,
+//     businessName: "",
+//   };
+
+//   if (businessId) {
+//     // Fetch Business Name
+//     const { data: business } = await supabase
+//       .from("businesses")
+//       .select("name")
+//       .eq("id", businessId)
+//       .single();
+//     dashboardData.businessName = business?.name || "";
+
+//     // Check Setup (Phone Number)
+//     const { count: phoneCount } = await supabase
+//       .from("phone_endpoints")
+//       .select("*", { count: "exact", head: true })
+//       .eq("business_id", businessId);
+
+//     dashboardData.isSetupComplete = (phoneCount || 0) > 0;
+
+//     // Fetch Calls
+//     const { data: calls } = await supabase
+//       .from("call_logs")
+//       .select("*")
+//       .eq("business_id", businessId)
+//       .order("created_at", { ascending: false });
+
+//     if (calls && calls.length > 0) {
+//       dashboardData.totalCalls = calls.length;
+
+//       // Calculate Avg Duration
+//       const totalMinutes = calls.reduce(
+//         (acc, call) => acc + (parseFloat(call.minutes) || 0),
+//         0,
+//       );
+//       const avg = totalMinutes / calls.length;
+//       dashboardData.avgDuration = `${avg.toFixed(1)}m`;
+
+//       // Recent Calls (Top 5)
+//       dashboardData.recentCalls = calls.slice(0, 5);
+
+//       // Success Rate (Calls > 0.2 min / Total Calls) - Heuristic
+//       const successfulCalls = calls.filter(
+//         (c) => (parseFloat(c.minutes) || 0) > 0.2,
+//       ).length;
+//       dashboardData.successRate = `${Math.round(
+//         (successfulCalls / calls.length) * 100,
+//       )}%`;
+//     }
+//   }
+
+//   // Get onboarding progress
+//   const onboardingProgress = await getOnboardingProgress(user.id);
+
+//   // Resolve billing state; if trial has expired and there's no subscription,
+//   // redirect to billing page to encourage upgrade before accessing the main dashboard.
+//   const billingState = await getBillingStateForUser(user.id);
+//   let trialDaysLeft: number | null = null;
+
+//   if (billingState) {
+//     // Check if user has feature access (trial active, subscription active, or in grace period)
+//     const { hasFeatureAccess } = await import("@/lib/billing");
+//     if (!hasFeatureAccess(billingState)) {
+//       redirect("/dashboard/billing");
+//     }
+
+//     trialDaysLeft = getTrialDaysRemaining(billingState);
+//   } else {
+//     // If we can't determine billing state, redirect to billing page for safety
+//     redirect("/dashboard/billing");
+//   }
+
+//   return (
+//     <DashboardContent
+//       user={user}
+//       data={dashboardData}
+//       onboardingProgress={onboardingProgress}
+//       trialDaysLeft={trialDaysLeft}
+//     />
+//   );
+// }
+
+
 import { DashboardContent } from "@/components/dashboard/content";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
@@ -29,6 +142,9 @@ export default async function Page() {
     recentCalls: [] as any[],
     isSetupComplete: false,
     businessName: "",
+    minutesUsed: 0,
+    callsThisMonth: 0,
+    plan: null as any,
   };
 
   if (businessId) {
@@ -39,6 +155,36 @@ export default async function Page() {
       .eq("id", businessId)
       .single();
     dashboardData.businessName = business?.name || "";
+
+    // Fetch current plan and subscription
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("plan_id")
+      .eq("business_id", businessId)
+      .single();
+
+    if (subscription?.plan_id) {
+      const { data: plan } = await supabase
+        .from("plans")
+        .select("*")
+        .eq("id", subscription.plan_id)
+        .single();
+      dashboardData.plan = plan;
+    }
+
+    // Fetch usage tracking for current period
+    const { data: usage } = await supabase
+      .from("usage_tracking")
+      .select("*")
+      .eq("business_id", businessId)
+      .order("period_start", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (usage) {
+      dashboardData.minutesUsed = usage.minutes_used || 0;
+      dashboardData.callsThisMonth = usage.calls_count || 0;
+    }
 
     // Check Setup (Phone Number)
     const { count: phoneCount } = await supabase
@@ -88,14 +234,16 @@ export default async function Page() {
   let trialDaysLeft: number | null = null;
 
   if (billingState) {
-    if (
-      !billingState.hasActiveSubscription &&
-      billingState.trialStatus === "expired"
-    ) {
+    // Check if user has feature access (trial active, subscription active, or in grace period)
+    const { hasFeatureAccess } = await import("@/lib/billing");
+    if (!hasFeatureAccess(billingState)) {
       redirect("/dashboard/billing");
     }
 
     trialDaysLeft = getTrialDaysRemaining(billingState);
+  } else {
+    // If we can't determine billing state, redirect to billing page for safety
+    redirect("/dashboard/billing");
   }
 
   return (

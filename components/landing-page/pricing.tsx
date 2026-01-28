@@ -15,26 +15,46 @@ import Link from "next/link";
 export function Pricing() {
   const [isAnnual, setIsAnnual] = useState(true);
 
+  // LOGIC: Annual price is approx 20% off monthly.
+  // Defined Plans:
+  // Starter: $49/mo -> $49 * .8 = $39.2 -> $39/mo billed annually
+  // Basic: $79/mo -> $79 * .8 = $63.2 -> $63/mo billed annually
+  // Pro: $129/mo -> $129 * .8 = $103.2 -> $103/mo billed annually
+  
   const plans = [
     {
       name: "Starter",
       icon: Zap,
-      monthlyPrice: 47.99,
-      annualPrice: 37.99,
+      monthlyPrice: 49,
+      annualPrice: 39,
       description:
-        "Perfect for small businesses and solo owners who need calls answered when they can't.",
+        "Perfect for solo owners and very small teams who need calls answered professionally.",
       popular: false,
       features: [
-        "Unlimited minutes",
+        "200 AI-handled minutes / month",
+        "24/7 call answering",
         "Custom greeting & agent name",
-        "Message taking with custom questions",
-        "Bilingual support (English & Spanish)",
-        "Email & SMS notifications",
-        "Call recordings & transcripts",
-        "Custom FAQs & answers",
-        "Spam filtering",
-        "Choose your area code",
-        "Zapier integration",
+        "Message taking with your questions",
+        "Instant email & SMS summaries",
+        "Spam & robocall filtering",
+      ],
+      cta: "Start Free Trial",
+      href: "/signup",
+    },
+    {
+      name: "Basic",
+      icon: Sparkles,
+      monthlyPrice: 79,
+      annualPrice: 63,
+      description: "Designed for small businesses getting steady call volume.",
+      popular: false,
+      features: [
+        "Everything in Starter, plus:",
+        "300 AI-handled minutes / month",
+        "Smart call routing",
+        "Lead qualification questions",
+        "SMS follow-ups after calls",
+        "Missed-call recovery logic",
       ],
       cta: "Start Free Trial",
       href: "/signup",
@@ -42,45 +62,36 @@ export function Pricing() {
     {
       name: "Pro",
       icon: Crown,
-      monthlyPrice: 97.99,
-      annualPrice: 87.99,
+      monthlyPrice: 129,
+      annualPrice: 103,
       description:
-        "For growing businesses that want Zevaux to answer calls and take action on their behalf.",
+        "For growing businesses that want Zevaux to take action, not just messages.",
       popular: true,
       features: [
-        "Everything in Professional, plus:",
-        "Appointment booking integration",
-        "Google Calendar, Calendly, Acuity",
-        "Call transfers to your team",
-        "Send text links during calls",
-        "Warm transfers",
+        "Everything in Basic, plus:",
+        "500 AI-handled minutes / month",
+        "Appointment booking automation",
+        "Live call transfers to your team",
+        "CRM integrations (Google, Calendly)",
         "Priority support",
-        "Advanced call routing",
-        "Custom integrations",
-        "Detailed analytics dashboard",
       ],
       cta: "Start Free Trial",
       href: "/signup",
     },
     {
-      name: "Enterprise",
+      name: "Custom",
       icon: Building,
       monthlyPrice: null,
       annualPrice: null,
-      description:
-        "For complex or multi-location businesses needing custom solutions and advanced training.",
+      description: "Built for high-volume and multi-location businesses.",
       popular: false,
       features: [
-        "Everything in Scale, plus:",
-        "Multiple locations support",
-        "Multi-unit franchises",
+        "Custom minute bundles (1,000+)",
+        "Multiple locations & numbers",
+        "Franchise support",
         "Fully custom AI prompts",
-        "Advanced agent training",
-        "Training file uploads",
-        "Dedicated account manager",
-        "Custom SLA guarantees",
         "White-label options",
-        "Enterprise SSO & security",
+        "Dedicated account manager",
       ],
       cta: "Contact Sales",
       href: "/contact",
@@ -88,12 +99,12 @@ export function Pricing() {
   ];
 
   const includedInAll = [
-    "Unlimited minutes on all plans",
     "AI trained on your specific business",
     "Available 24/7/365",
     "Enterprise-grade security",
     "No setup fees",
     "Cancel anytime",
+    "Call recordings & transcripts",
   ];
 
   return (
@@ -102,9 +113,7 @@ export function Pricing() {
       className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8"
     >
       {/* Background */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background" />
-      </div>
+      <div className="absolute inset-0 -z-10 bg-background" />
 
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
@@ -119,8 +128,7 @@ export function Pricing() {
             Plans That Scale With Your Business
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Start with a 7-day free trial. No credit card required. All features
-            included.
+            Transparent pricing. No hidden fees. Upgrade or downgrade anytime.
           </p>
         </div>
 
@@ -154,7 +162,7 @@ export function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-16">
+        <div className="grid lg:grid-cols-4 gap-6 mb-16">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
@@ -162,27 +170,27 @@ export function Pricing() {
             return (
               <div
                 key={plan.name}
-                className={`relative rounded-2xl border transition-all duration-300 ${
+                className={`relative flex flex-col rounded-2xl border transition-all duration-300 ${
                   plan.popular
-                    ? "border-primary bg-gradient-to-b from-primary/5 via-card to-card shadow-xl lg:scale-105 z-10"
+                    ? "border-primary bg-gradient-to-b from-primary/5 via-card to-card shadow-xl scale-105 z-10"
                     : "border-border bg-card hover:border-primary/30 hover:shadow-lg"
                 }`}
               >
                 {/* Popular Badge */}
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground shadow-lg">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground shadow-lg whitespace-nowrap">
                       <Crown className="h-4 w-4" />
                       Most Popular
                     </span>
                   </div>
                 )}
 
-                <div className="p-8">
+                <div className="p-6 flex-1 flex flex-col">
                   {/* Plan Header */}
                   <div className="flex items-center gap-3 mb-4">
                     <div
-                      className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                      className={`h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         plan.popular
                           ? "bg-primary text-primary-foreground"
                           : "bg-primary/10"
@@ -199,71 +207,59 @@ export function Pricing() {
 
                   {/* Price */}
                   <div className="mb-4">
-                    {price !== null ? (
+                    {plan.monthlyPrice !== null ? (
                       <div className="flex items-baseline gap-1">
                         <span className="text-4xl font-bold text-foreground">
                           ${price}
                         </span>
-                        <span className="text-muted-foreground">/month</span>
-                        {isAnnual && (
-                          <span className="ml-2 text-sm text-muted-foreground line-through">
-                            ${plan.monthlyPrice}
-                          </span>
-                        )}
+                        <span className="text-muted-foreground">/mo</span>
                       </div>
                     ) : (
-                      <div className="text-4xl font-bold text-foreground">
-                        Custom
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-foreground">
+                          Custom
+                        </span>
                       </div>
                     )}
-                    {isAnnual && price !== null && (
+                    {isAnnual && plan.monthlyPrice !== null && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Billed annually (${price * 12}/year)
+                        Billed annually (${(plan.annualPrice || 0) * 12}/yr)
+                      </p>
+                    )}
+                    {!isAnnual && plan.monthlyPrice !== null && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                         Billed monthly
                       </p>
                     )}
                   </div>
 
-                  {/* Description */}
                   <p className="text-sm text-muted-foreground mb-6">
                     {plan.description}
                   </p>
 
-                  {/* CTA Button */}
-                  <Button
-                    asChild
-                    className={`w-full mb-8 ${
-                      plan.popular
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                        : "bg-primary/10 text-primary hover:bg-primary/20"
-                    }`}
-                    size="lg"
-                  >
-                    <Link
-                      href={plan.href}
-                      className="flex items-center justify-center gap-2"
-                    >
-                      {plan.cta}
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-
-                  {/* Features */}
-                  <div className="space-y-3">
-                    {plan.features.map((feature, index) => (
-                      <div key={index} className="flex gap-3 items-start">
-                        <Check
-                          className={`h-5 w-5 flex-shrink-0 ${
-                            plan.popular
-                              ? "text-primary"
-                              : "text-muted-foreground"
-                          }`}
-                        />
-                        <span className="text-sm text-foreground">
+                  <div className="space-y-3 mb-6 flex-1">
+                    {plan.features.map((feature) => (
+                      <div key={feature} className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                        <span className="text-sm text-foreground/80">
                           {feature}
                         </span>
                       </div>
                     ))}
                   </div>
+
+                  <Button
+                    asChild
+                    size="lg"
+                    className={`w-full ${
+                      plan.popular ? "bg-primary" : "bg-muted text-foreground hover:bg-muted/80"
+                    }`}
+                    variant={plan.popular ? "default" : "secondary"}
+                  >
+                    <Link href={plan.href}>
+                      {plan.cta} <ArrowRight className="h-4 w-4 ml-2" />
+                    </Link>
+                  </Button>
                 </div>
               </div>
             );

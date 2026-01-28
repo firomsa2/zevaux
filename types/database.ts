@@ -8,7 +8,7 @@ export interface Business {
   tone: string;
   phone_main: string | null;
   escalation_number: string | null;
-  billing_plan: "starter" | "pro" | "enterprise";
+  billing_plan: "starter" | "basic" | "pro" | "custom" | "enterprise";
   hipaa_mode: boolean;
   created_at: string;
   updated_at: string;
@@ -16,6 +16,15 @@ export interface Business {
   assistant_name: string | null;
   website: string | null;
   personalized_greeting?: string | null;
+  billing_cycle_start?: string;
+  billing_cycle_end?: string;
+  minute_alert_state?: {
+    sent_70?: boolean;
+    sent_90?: boolean;
+    sent_100?: boolean;
+    sent_120?: boolean;
+    last_reset?: string;
+  };
 }
 
 export interface Plan {
@@ -100,6 +109,42 @@ export interface CallLog {
   created_at: string;
   metadata: Record<string, unknown> | null;
   minutes: number | null;
+  billable_seconds?: number;
+  billable_minutes?: number;
+  cost?: number; // Calculated overage cost if applicable
+}
+
+export interface UsageSnapshot {
+  id: string;
+  business_id: string;
+  year: number;
+  month: number;
+  total_billable_seconds: number;
+  total_minutes_used: number;
+  overage_minutes: number;
+  overage_cost: number;
+  created_at: string;
+}
+
+export interface UsageTracking {
+  id: string;
+  business_id: string;
+  minutes_used: number;
+  calls_made: number;
+  purchased_minutes: number; // Add-on packs
+  period_start: string;
+  period_end: string;
+  updated_at: string;
+}
+
+export interface UsageNotification {
+  id: string;
+  business_id: string;
+  threshold_percentage: number;
+  current_usage_percentage: number;
+  minutes_used: number;
+  minutes_limit: number;
+  sent_at: string;
 }
 
 export interface Invoice {

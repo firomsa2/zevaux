@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { ensureOnboardingProgressExists } from "@/utils/onboarding";
 
 export async function POST(req: Request) {
   try {
@@ -44,6 +45,9 @@ export async function POST(req: Request) {
         console.error("Error creating document record:", docError);
         // We can continue but the webhook might fail if it relies on DB record
       }
+
+      // Ensure onboarding_progress record exists so webhook can update it
+      await ensureOnboardingProgressExists(businessId);
 
       const documentId = document?.id;
 

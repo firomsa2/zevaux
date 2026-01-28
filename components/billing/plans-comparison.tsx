@@ -23,19 +23,51 @@ export function BillingPlansComparison({
   const handleUpgrade = (planSlug: string) => {
     startTransition(async () => {
       try {
-        const response = await fetch("/api/stripe/checkout/session", {
+        // First, try to update existing subscription
+        const updateResponse = await fetch("/api/stripe/subscriptions/update", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ businessId, planSlug }),
         });
 
-        const data = await response.json();
+        const updateData = await updateResponse.json();
 
-        if (data.url) {
-          window.location.href = data.url;
+        if (updateResponse.ok && updateData.success) {
+          // Subscription updated successfully - reload page to show new plan
+          window.location.reload();
+          return;
+        }
+
+        // If update failed because no subscription exists, create new one
+        if (
+          updateData.error?.includes("No active subscription") ||
+          updateData.redirectToCheckout
+        ) {
+          const checkoutResponse = await fetch("/api/stripe/checkout/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ businessId, planSlug }),
+          });
+
+          const checkoutData = await checkoutResponse.json();
+
+          if (checkoutData.url) {
+            window.location.href = checkoutData.url;
+          } else {
+            throw new Error(
+              checkoutData.error || "Failed to create checkout session"
+            );
+          }
+        } else {
+          throw new Error(updateData.error || "Failed to update subscription");
         }
       } catch (error) {
         console.error("Error upgrading plan:", error);
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Failed to change plan. Please try again."
+        );
       }
     });
   };
